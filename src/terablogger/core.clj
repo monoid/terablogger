@@ -10,7 +10,7 @@
 (defn default-config []
   "Return default config."
   {:blog-dir (or (System/getenv "BLOG_DIR")
-                 "/home/ib/projects/html/lithops.pp.ru/blog")
+                 "./blog")
    :page-size PAGE-SIZE
    :url "http://example-blog.com/blog/"
    :domain "example-blog.com"
@@ -82,9 +82,36 @@
     {:name name
      :files files}))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Posts
+;;;
+
+(defn parse-headers [headers]
+  (apply hash-map
+         (mapcat #(let [[key val] (string/split % #": " 2)]
+                    (list (keyword key) val))
+                 headers)))
+
+(defn parse-post [file]
+  (let [txt (slurp file)
+        lines (string/split-lines txt)
+        [headers body] (split-with #(not (re-seq #"^-----$" %)) lines)]
+    [(parse-headers headers) (string/join "\n" (butlast (rest (rest body))))]))
+
+(defn ls-posts [posts]
+  (dorun
+   (for [[p n] (map list posts (range))]
+     ;; TODO: format
+     (println (str (inc n)
+                   ". "
+                   (:TITLE (p 0))
+                   " - "
+                   (:DATE (p 0)))))))
+
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
   ;; work around dangerous default behaviour in Clojure
   (alter-var-root #'*read-eval* (constantly false))
-  (println "Hello, World!"))
+  (ls-posts (map parse-post (take 10 (list-posts)))))
