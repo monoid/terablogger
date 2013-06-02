@@ -101,13 +101,11 @@
 
 (defn ls-posts [posts]
   (dorun
-   (for [[p n] (map list posts (range))]
-     ;; TODO: format
-     (println (str (inc n)
-                   ". "
-                   (:TITLE (p 0))
-                   " - "
-                   (:DATE (p 0)))))))
+   (for [[[p b] n] (map list posts (range))]
+     (println (format "%d. %s - %s"
+                      (inc n)
+                      (:TITLE p)
+                      (:DATE p))))))
 
 (defn -main
   "I don't do a whole lot ... yet."
