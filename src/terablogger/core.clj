@@ -156,4 +156,4 @@
   [& args]
   ;; work around dangerous default behaviour in Clojure
   (alter-var-root #'*read-eval* (constantly false))
-  (ls-posts (map parse-post (take 10 (list-posts)))))
+  (ls-posts (map parse-post (take (:page-size *cfg*) (list-posts)))))
