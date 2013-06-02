@@ -93,6 +93,15 @@
   [posts]
   (partition (:page-size *cfg*) posts))
 
+(defn truncatechars
+  "If msg's length exeeds n, truncate it, appending '...'. "
+  [msg n]
+  (if (> (count msg) n)
+    (str (string/trimr ; Trim for better text appearance
+          (subs msg 0 (- n 3))) "...")
+    msg))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; Categories
@@ -144,8 +153,8 @@
         (let [[p _ _] post
               pcats (posts-cats post cats)]
           (print (format "%d. %s"
-                           (inc n)
-                           (:TITLE p)))
+                         (inc n)
+                         (truncatechars (:TITLE p) 32)))
           (when (seq pcats)
             (print (format " - [%s]" (string/join ", " (map :name pcats)))))
           (println (format " - %s" (:DATE p))))))))
