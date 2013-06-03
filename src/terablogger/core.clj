@@ -117,8 +117,11 @@
   "Parse category file."
   [file]
   (let [txt (slurp (data-file file))
-        [name & files] (string/split-lines txt)]
-    {:name name
+        [name & files] (string/split-lines txt)
+        [_ id] (re-matches #"cat_([0-9]+).db$" file)]
+    {:id id
+     :url (str (:url *cfg*) "/archives/cat_" id "/")
+     :name name
      :files files
      :set (set files)}))
 
@@ -135,6 +138,13 @@
                     [(keyword key) val])
                  headers)))
 
+(defn post-with-cats
+  "Return list of cats post belongs to."
+  [post cats]
+  (let [[h b f] post]
+   [(assoc h :categories (filter #((:set %) f) cats))
+    b f]))
+
 (defn parse-post 
   "Parse blog post."
   [file]
@@ -147,10 +157,11 @@
 
 (defn write-post-part
   "Write post's part to cache."
-  [post]
-  (let [[h b f] post
+  [cats post]
+  (let [[h b f] (post-with-cats post cats)
         cfg (assoc *cfg* :archive (str (:url *cfg*) "/archive"))
-        entry (assoc h :BODY b :ID f :permalink "STUB" :categories nil)]
+        entry (assoc h :BODY b :ID f :permalink "STUB"
+                     :categories? (boolean (seq (:categories h))))]
     (spit
      (cache-path (str f ".html"))
      (render
@@ -158,20 +169,14 @@
       {:cfg cfg :entry entry}))))
 
 
-(defn posts-cats
-  "Return list of cats post belongs to."
-  [post cats]
-  (let [[_ _ f] post]
-   (filter #((:set %) f) cats)))
-
 (defn ls-posts
   ([posts]
      (ls-posts posts (map parse-cat (list-cats))))
   ([posts cats]
      (dorun
       (for [[post n] (map list posts (range))]
-        (let [[p _ _] post
-              pcats (posts-cats post cats)]
+        (let [[p _ _] (post-with-cats post cats)
+              pcats (:categories p)]
           (print (format "%d. %s"
                          (inc n)
                          (truncatechars (:TITLE p) 32)))
@@ -186,6 +191,7 @@
   ;; work around dangerous default behaviour in Clojure
   (alter-var-root #'*read-eval* (constantly false))
   (dorun
-   (map write-post-part
+   (map (partial write-post-part (map parse-cat (list-cats)))
         (map parse-post (list-posts))))
-  (ls-posts (map parse-post (take (:page-size *cfg*) (list-posts)))))
+  (ls-posts (map parse-post (take (:page-size *cfg*) (list-posts))))
+  )
