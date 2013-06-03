@@ -1,5 +1,6 @@
 (ns terablogger.core
   (:import java.io.File)
+  (:use clostache.parser)
   (:require [clojure.string :as string])
   (:gen-class))
 
@@ -20,6 +21,7 @@
    :title "Example blog"
    :description "Long blog description."
    :author "George W. Bush Jr."
+   :permalink true
    ;; Input format
    :format "html" ; the only supported
    :html-auto-break true})
@@ -66,6 +68,11 @@
   [filename]
   (File. (data-path filename)))
 
+(defn archive-path [filename]
+  (str *blog-dir* File/separator "archives" File/separator filename))
+
+(defn cache-path [filename]
+  (str *blog-dir* File/separator "cache" File/separator filename))
 
 (defn data-lister
   "List files in data dir that match regex"
@@ -138,6 +145,19 @@
      (string/join "\n" (butlast (rest (rest body))))
      file]))
 
+(defn write-post-part
+  "Write post's part to cache."
+  [post]
+  (let [[h b f] post
+        cfg (assoc *cfg* :archive (str (:url *cfg*) "/archive"))
+        entry (assoc h :BODY b :ID f :permalink "STUB" :categories nil)]
+    (spit
+     (cache-path (str f ".html"))
+     (render
+      (slurp "./blog/templates/entry.mustache")
+      {:cfg cfg :entry entry}))))
+
+
 (defn posts-cats
   "Return list of cats post belongs to."
   [post cats]
@@ -165,4 +185,7 @@
   [& args]
   ;; work around dangerous default behaviour in Clojure
   (alter-var-root #'*read-eval* (constantly false))
+  (dorun
+   (map write-post-part
+        (map parse-post (list-posts))))
   (ls-posts (map parse-post (take (:page-size *cfg*) (list-posts)))))
