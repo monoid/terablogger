@@ -1,0 +1,21 @@
+<div class="item" id="{{entry.ID}}">
+<h2 class="date">{{&entry.DATE}}</h2>
+<div class="blogbody">
+<h3 class="title">{{&entry.TITLE}}</h3>
+<div class="item-description">
+{{&entry.BODY}}
+</div>
+</div>
+
+<div class="posted">
+{{#cfg.permalink}}
+<a class="link" title="Article's permanent link" href="{{cfg.archive}}/{{entry.permalink}}">Permanent link</a>
+{{/cfg.permalink}}
+{{#entry.categories?}}
+| Categories:
+{{#entry.categories}}
+  <a href="{{url}}">{{name}}<a> 
+{{/entry.categories}}
+{{/entry.categories?}}
+</div>
+</div>
