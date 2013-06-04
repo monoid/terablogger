@@ -138,32 +138,28 @@
                     [(keyword key) val])
                  headers)))
 
-(defn post-with-cats
-  "Return list of cats post belongs to."
-  [post cats]
-  (let [[h b f] post]
-   [(assoc h :categories (filter #((:set %) f) cats))
-    b f]))
-
 (defn parse-post 
   "Parse blog post."
-  [file]
+  [cats file]
   (let [txt (slurp (data-file file))
         lines (string/split-lines txt)
         [headers body] (split-with #(not (re-seq #"^-----$" %)) lines)]
-    [(parse-headers headers)
-     (string/join "\n" (butlast (rest (rest body))))
-     file]))
+    (assoc (parse-headers headers)
+      :BODY (string/join "\n" (butlast (rest (rest body))))
+      :categories (filter #((:set %) file) cats)
+      :ID file
+      :permalink (str (subs file 0 (- (count file) 3))
+                      "html"))))
+
 
 (defn write-post-part
   "Write post's part to cache."
-  [cats post]
-  (let [[h b f] (post-with-cats post cats)
-        cfg (assoc *cfg* :archive (str (:url *cfg*) "/archive"))
-        entry (assoc h :BODY b :ID f :permalink "STUB"
-                     :categories? (boolean (seq (:categories h))))]
+  [post]
+  (let [cfg (assoc *cfg* :archive (str (:url *cfg*) "/archive"))
+        entry (assoc post
+                     :categories? (boolean (seq (:categories post))))]
     (spit
-     (cache-path (str f ".html"))
+     (cache-path (str (:ID post) ".html"))
      (render
       (slurp "./blog/templates/entry.mustache")
       {:cfg cfg :entry entry}))))
@@ -174,9 +170,8 @@
      (ls-posts posts (map parse-cat (list-cats))))
   ([posts cats]
      (dorun
-      (for [[post n] (map list posts (range))]
-        (let [[p _ _] (post-with-cats post cats)
-              pcats (:categories p)]
+      (for [[p n] (map list posts (range))]
+        (let [pcats (:categories p)]
           (print (format "%d. %s"
                          (inc n)
                          (truncatechars (:TITLE p) 32)))
@@ -190,8 +185,11 @@
   [& args]
   ;; work around dangerous default behaviour in Clojure
   (alter-var-root #'*read-eval* (constantly false))
-  (dorun
-   (map (partial write-post-part (map parse-cat (list-cats)))
-        (map parse-post (list-posts))))
-  (ls-posts (map parse-post (take (:page-size *cfg*) (list-posts))))
-  )
+  (let [cats (map parse-cat (list-cats))
+        posts (map (partial parse-post cats)
+                   (list-posts))]
+    (dorun
+     (for [post posts]
+       (write-post-part post)))
+    (ls-posts (take (:page-size *cfg*) posts))))
+
