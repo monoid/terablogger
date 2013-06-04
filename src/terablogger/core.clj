@@ -166,18 +166,16 @@
 
 
 (defn ls-posts
-  ([posts]
-     (ls-posts posts (map parse-cat (list-cats))))
-  ([posts cats]
-     (dorun
-      (for [[p n] (map list posts (range))]
-        (let [pcats (:categories p)]
-          (print (format "%d. %s"
-                         (inc n)
-                         (truncatechars (:TITLE p) 32)))
-          (when (seq pcats)
-            (print (format " - [%s]" (string/join ", " (map :name pcats)))))
-          (println (format " - %s" (:DATE p))))))))
+  [posts]
+  (dorun
+   (for [[p n] (map list posts (range))]
+     (let [pcats (:categories p)]
+       (print (format "%d. %s"
+                      (inc n)
+                      (truncatechars (:TITLE p) 32)))
+       (when (seq pcats)
+         (print (format " - [%s]" (string/join ", " (map :name pcats)))))
+       (println (format " - %s" (:DATE p)))))))
 
 
 (defn -main
