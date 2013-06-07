@@ -72,7 +72,7 @@
   (str *blog-dir* File/separator "archives" File/separator filename))
 
 (defn cache-path [filename]
-  (str *blog-dir* File/separator "cache" File/separator filename))
+  (str *blog-dir* File/separator "parts" File/separator filename))
 
 (defn data-lister
   "List files in data dir that match regex"
