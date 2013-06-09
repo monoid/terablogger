@@ -1,7 +1,8 @@
 (ns terablogger.core
   (:import java.io.File)
   (:use clostache.parser)
-  (:require [clojure.string :as string])
+  (:require [clojure.string :as string]
+            [clojure.java.io :as io])
   (:gen-class))
 
 (def PAGE-SIZE
@@ -95,10 +96,22 @@
   "Function that return list of category posts."
   (data-lister #"\.txt$" #(compare %2 %1)))
 
+
+(defn paginated-name [idx]
+  (if (nil? idx)
+    ''
+    (str "index-page" idx ".html")))
+
 (defn paginate
   "Split sequence of posts into pages of :page-size length."
   [posts]
-  (partition (:page-size *cfg*) posts))
+  (let [numbers (iterate (partial + 1) 1)
+        pages   (partition (:page-size *cfg*) posts)]
+   (map vec pages
+            numbers
+            (map paginated-name (cons nil numbers))
+            (map paginated-name (rest numbers)))))
+
 
 (defn truncatechars
   "If msg's length exeeds n, truncate it, appending '...'. "
@@ -125,6 +138,7 @@
      :files files
      :set (set files)}))
 
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; Posts
@@ -138,6 +152,13 @@
                     [(keyword key) val])
                  headers)))
 
+(defn post-path
+  ([id]
+     (post-path "/" id))
+  ([sep id]
+     (str (string/join sep (rest (re-matches #"^(\d+)-(\d+)-(\d+)(T[0-9_]+).*" id)))
+          sep "index.html")))
+
 (defn parse-post 
   "Parse blog post."
   [cats file]
@@ -148,21 +169,50 @@
       :BODY (string/join "\n" (butlast (rest (rest body))))
       :categories (filter #((:set %) file) cats)
       :ID file
-      :permalink (str (subs file 0 (- (count file) 3))
-                      "html"))))
+      :permalink (post-path file))))
 
+(defn month-path
+  ([id]
+     (month-path "/" id))
+  ([sep id]
+     (string/join sep (rest (re-matches #"^(\d+)-(\d+).*" id)))))
+
+(defn months
+  [posts]
+  (group-by month-path posts))
+
+(defn get-cached-post-part
+  "Load part from cache."
+  [post-id]
+  (slurp (cache-path (post-path File/separator post-id))))
+
+(defn write-months-parts
+  [months]
+  (dorun
+   (for [month (keys months)
+         :let [posts (reverse (sort (get months month)))
+               pages (paginate posts)]]
+     ;; Write each page
+     ;; TODO: month-past has Web path separators...
+     ;; TODO: write paginated
+     (let [p (cache-path (str month File/separator "index.html"))]
+       (io/make-parents p)
+       (spit (cache-path (str month File/separator "index.html"))
+             (string/join "" (map get-cached-post-part posts)))))))
 
 (defn write-post-part
-  "Write post's part to cache."
-  [post]
-  (let [cfg (assoc *cfg* :archive (str (:url *cfg*) "/archive"))
-        entry (assoc post
-                     :categories? (boolean (seq (:categories post))))]
-    (spit
-     (cache-path (str (:ID post) ".html"))
-     (render
-      (slurp "./blog/templates/entry.mustache")
-      {:cfg cfg :entry entry}))))
+    "Write post's part to cache."
+    [post]
+    (let [cfg   (assoc *cfg* :archive (str (:url *cfg*) "/archive"))
+          entry (assoc post
+                  :categories? (boolean (seq (:categories post))))
+          cpath (cache-path (post-path File/separator (:ID post)))]
+      (io/make-parents cpath)
+      (spit
+       cpath
+       (render
+        (slurp "./blog/templates/entry.mustache")
+        {:cfg cfg :entry entry}))))
 
 
 (defn ls-posts
@@ -185,9 +235,11 @@
   (alter-var-root #'*read-eval* (constantly false))
   (let [cats (map parse-cat (list-cats))
         posts (map (partial parse-post cats)
-                   (list-posts))]
+                   (list-posts))
+        m (months (list-posts))]
     (dorun
      (for [post posts]
        (write-post-part post)))
+    (write-months-parts m)
     (ls-posts (take (:page-size *cfg*) posts))))
 
