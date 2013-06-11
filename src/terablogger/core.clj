@@ -140,23 +140,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; Categories
-;;;
-(defn parse-cat
-  "Parse category file."
-  [file]
-  (let [txt (slurp (data-file file))
-        [name & files] (string/split-lines txt)
-        [_ id] (re-matches #"cat_([0-9]+).db$" file)]
-    {:id id
-     :url (str (:url *cfg*) "/archives/cat_" id "/")
-     :name name
-     :files files
-     :set (set files)}))
-
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
 ;;; Posts
 ;;;
 
@@ -248,6 +231,51 @@
        (println (format " - %s" (:DATE p)))))))
 
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Categories
+;;;
+(defn parse-cat
+  "Parse category file."
+  [file]
+  (let [txt (slurp (data-file file))
+        [name & files] (string/split-lines txt)
+        [_ id] (re-matches #"cat_([0-9]+).db$" file)]
+    {:id id
+     :url (str (:url *cfg*) "/archives/cat_" id "/")
+     :name name
+     :files files
+     :set (set files)}))
+
+(defn write-cat
+  [cat]
+  (let [{id :id
+         url :url
+         name :name
+         posts :files} cat
+         ;; File base path
+         p (archive-path (format "cat_%s" id))]
+    (dorun
+     (for [[pposts ptab pfname] (paginate posts url)
+           ;; File path
+           :let [path (str p File/separator pfname)]]
+       (do
+         (io/make-parents path)
+         (spit path
+               (render (slurp "./blog/templates/category.mustache")
+                       {:cfg *cfg*
+                        :cat cat
+                        :body (string/join "" (map get-cached-post-part pposts))
+                        :tab ptab})))))))
+
+
+(defn write-cats
+  [cats]
+  (dorun
+   (for [cat cats]
+     (write-cat cat))))
+
+
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
@@ -261,5 +289,6 @@
      (for [post posts]
        (write-post-part post)))
     (write-months-parts m)
+    (write-cats cats)
     (ls-posts (take (:page-size *cfg*) posts))))
 
