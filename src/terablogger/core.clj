@@ -98,20 +98,36 @@
 
 
 (defn paginated-name [idx]
-  (if (nil? idx)
-    ''
-    (str "index-page" idx ".html")))
+  (if (= 1 idx)
+    "index.html"
+    (format "index-page%d.html" idx)))
+
+(defn paginated-bar
+  "HTML fragment of page bar for multi-page sequences.
+
+  i -- current page.
+  n -- total number of pages.
+  prefix -- prefix url."
+  [i n prefix]
+  (string/join
+   " "
+   (for [idx (range 1 (inc n))]
+     (if (= i idx)
+       (format "[%d]" i)
+       ;; TODO: rel nex, prev
+       (format "[<a href='%s'>%d</a>]"
+               (str prefix "/" (paginated-name idx))
+               idx)))))
 
 (defn paginate
   "Split sequence of posts into pages of :page-size length."
-  [posts]
+  [posts url-prefix]
   (let [numbers (iterate (partial + 1) 1)
-        pages   (partition (:page-size *cfg*) posts)]
-   (map vec pages
-            numbers
-            (map paginated-name (cons nil numbers))
-            (map paginated-name (rest numbers)))))
-
+        pages   (partition (:page-size *cfg*) posts)
+        npages  (count pages)]
+    (map list pages
+              (map #(paginated-bar % npages url-prefix) numbers)
+              (map paginated-name numbers))))
 
 (defn truncatechars
   "If msg's length exeeds n, truncate it, appending '...'. "
@@ -191,14 +207,18 @@
   (dorun
    (for [month (keys months)
          :let [posts (reverse (sort (get months month)))
-               pages (paginate posts)]]
+               p (cache-path month)
+               pages (paginate posts p)]]
      ;; Write each page
      ;; TODO: month-past has Web path separators...
      ;; TODO: write paginated
-     (let [p (cache-path (str month File/separator "index.html"))]
-       (io/make-parents p)
-       (spit (cache-path (str month File/separator "index.html"))
-             (string/join "" (map get-cached-post-part posts)))))))
+     (dorun
+      (for [[pposts ptab pfname] pages
+            :let [path (str p File/separator pfname)]]
+        (do
+          (io/make-parents path)
+          (spit path
+                (string/join "" (map get-cached-post-part pposts)))))))))
 
 (defn write-post-part
     "Write post's part to cache."

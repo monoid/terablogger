@@ -17,8 +17,33 @@
     (is (= "2006/04/07/T12_04_59/index.html"
            (post-path "2006-04-07T12_04_59.txt")))))
 
-
 (deftest post-month-test
   (testing "post-month test."
     (is (= "2006/04"
            (month-path "2006-04-07T12_04_59.txt")))))
+
+(deftest paginated-bar-test1
+  (testing "short paginating bar"
+    (is (= "[1]" (paginated-bar 1 1 "/blog/parts")))))
+
+
+(deftest paginated-bar-test2
+  (testing "short paginating bar"
+    (is (= "[1] [<a href='/blog/parts/cat_1/index-page2.html'>2</a>]"
+           (paginated-bar 1 2 "/blog/parts/cat_1")))))
+
+(deftest paginated-bar-test1-2
+  (testing "short paginating bar"
+    (is (= "[<a href='/blog/parts/cat_1/index.html'>1</a>] [2]"
+           (paginated-bar 2 2 "/blog/parts/cat_1")))))
+
+(deftest paginated-name-test1
+  (testing "First paginated filename."
+    (is (= "index.html"
+           (paginated-name 1)))))
+
+(deftest paginated-name-test2
+  (testing "Second paginated filename."
+    (is (= "index-page2.html"
+           (paginated-name 2)))))
+
