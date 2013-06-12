@@ -262,7 +262,7 @@
        (do
          (io/make-parents path)
          (spit path
-               (render (slurp "./blog/templates/category.mustache")
+               (render (slurp "./blog/templates/category-archive.mustache")
                        {:cfg *cfg*
                         :cat cat
                         :body (string/join "" (map get-cached-post-part pposts))
