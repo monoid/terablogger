@@ -188,13 +188,12 @@
 (defn write-months-parts
   [months]
   (dorun
-   (for [month (keys months)
-         :let [posts (reverse (sort (get months month)))
+   (for [[month posts] months
+         :let [sorted-posts (sort #(compare %2 %1) posts)
                p (cache-path month)
-               pages (paginate posts p)]]
+               pages (paginate sorted-posts p)]]
      ;; Write each page
      ;; TODO: month-past has Web path separators...
-     ;; TODO: write paginated
      (dorun
       (for [[pposts ptab pfname] pages
             :let [path (str p File/separator pfname)]]
