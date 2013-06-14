@@ -122,7 +122,7 @@
 (defn paginate
   "Split sequence of posts into pages of :page-size length."
   [posts url-prefix]
-  (let [numbers (iterate (partial + 1) 1)
+  (let [numbers (iterate inc 1)
         pages   (partition (:page-size *cfg*) posts)
         npages  (count pages)]
     (map list pages
