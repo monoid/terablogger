@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed version="0.3" xmlns="http://purl.org/atom/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<title mode="escaped">{{cfg.title}}</title>
+<link rel="alternate" type="text/html" href="{{cfg.url}}" />
+<modified>{{lastmodified}}</modified>
+<author>
+<name>{{cfg.url}}</name>
+<url>{{cfg.url}}</url>
+</author>
+{{#entries}}
+<entry>
+<title mode="escaped">{{TITLE}}</title>
+<author>
+<name>{{AUTHOR}}</name>
+</author>
+<link rel="alternate" type="text/html" href="{{cfg.url}}/archive/{{permalink}}" />
+<id>{{cfg.url}}/archive/{{permalink}}</id>
+<issued>{{ts}}</issued>
+<modified>{{ts}}</modified>
+<created>{{ts}}</created>
+<dc:subject>{{categories2}}</dc:subject>
+<content type="application/xhtml+xml" xml:lang="en" xml:space="preserve" mode="escaped">
+<![CDATA[
+{{&BODY}}
+]]>
+</content>
+</entry>
+{{/entries}}
+</feed>

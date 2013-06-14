@@ -158,17 +158,42 @@
      (str (string/join sep (rest (re-matches #"^(\d+)-(\d+)-(\d+)(T[0-9_]+).*" id)))
           sep "index.html")))
 
+(defn post-ts
+  "Return "
+  [id]
+  (if (nil? id)
+    nil
+    (let [[year month day hours minutes seconds] 
+          (map #(Integer/parseInt %)
+               (rest (re-matches #"^(\d+)-(\d+)-(\d+)T([0-9]+)_([0-9]+)_([0-9]+).*" id)))
+          ;; tz  (/ (.getOffset (java.util.TimeZone/getDefault)
+          ;;                    0 year month day 2 ; TODO TODO TODO
+          ;;                    (* 1000
+          ;;                       (+ seconds
+          ;;                          (* 60
+          ;;                             (+ minutes
+          ;;                                (* 60 hours))))))
+          ;;        1000 60)
+          ;; tzs (format "%+03d:%02d" (quot tz 60) (Math/abs (rem tz 60)))
+          tzs "Z"]
+      (format "%4d-%02d-%02dT%02d:%02d:%02d%s"
+              year month day hours minutes seconds tzs))))
+
 (defn parse-post 
   "Parse blog post."
-  [cats file]
-  (let [txt (slurp (data-file file))
+  [cats id]
+  (let [txt (slurp (data-file id))
         lines (string/split-lines txt)
-        [headers body] (split-with #(not (re-seq #"^-----$" %)) lines)]
+        [headers body] (split-with #(not (re-seq #"^-----$" %)) lines)
+        categories (filter #((:set %) id) cats)
+        ]
     (assoc (parse-headers headers)
       :BODY (string/join "\n" (butlast (rest (rest body))))
-      :categories (filter #((:set %) file) cats)
-      :ID file
-      :permalink (post-path file))))
+      :categories categories
+      :categories2 (string/join ", " (map :name categories))
+      :ID id
+      :ts (post-ts id)
+      :permalink (post-path id))))
 
 (defn month-path
   ([id]
@@ -274,6 +299,14 @@
    (for [cat cats]
      (write-cat cat))))
 
+(defn write-feed
+  [posts]
+  (spit (blog-path "atom.xml")
+        (render (slurp "./blog/templates/atom.mustache")
+                {:cfg *cfg*
+                 :entries (take (:page-size *cfg*) posts)
+                 :lastmodified (post-ts (:ID (first posts)))
+                 })))
 
 (defn -main
   "I don't do a whole lot ... yet."
@@ -287,6 +320,7 @@
     (dorun
      (for [post posts]
        (write-post-part post)))
+    (write-feed posts)
     (write-months-parts m)
     (write-cats cats)
     (ls-posts (take (:page-size *cfg*) posts))))
