@@ -114,8 +114,11 @@
    (for [idx (range 1 (inc n))]
      (if (= i idx)
        (format "[%d]" i)
-       ;; TODO: rel nex, prev
-       (format "[<a href='%s'>%d</a>]"
+       (format "[<a%s href='%s'>%d</a>]"
+               (cond
+                (= (inc idx) i) " rel='prev'" ; idx = i-1
+                (= (inc i) idx) " rel='next'" ; idx = i+1
+                :else "")
                (str prefix "/" (paginated-filename idx))
                idx)))))
 
