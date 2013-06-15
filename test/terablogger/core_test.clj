@@ -37,13 +37,13 @@
     (is (= "[<a href='/blog/parts/cat_1/index.html'>1</a>] [2]"
            (paginated-bar 2 2 "/blog/parts/cat_1")))))
 
-(deftest paginated-name-test1
+(deftest paginated-filename-test1
   (testing "First paginated filename."
     (is (= "index.html"
-           (paginated-name 1)))))
+           (paginated-filename 1)))))
 
-(deftest paginated-name-test2
+(deftest paginated-filename-test2
   (testing "Second paginated filename."
     (is (= "index-page2.html"
-           (paginated-name 2)))))
+           (paginated-filename 2)))))
 

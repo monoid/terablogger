@@ -97,7 +97,7 @@
   (data-lister #"\.txt$" #(compare %2 %1)))
 
 
-(defn paginated-name [idx]
+(defn paginated-filename [idx]
   (if (= 1 idx)
     "index.html"
     (format "index-page%d.html" idx)))
@@ -116,7 +116,7 @@
        (format "[%d]" i)
        ;; TODO: rel nex, prev
        (format "[<a href='%s'>%d</a>]"
-               (str prefix "/" (paginated-name idx))
+               (str prefix "/" (paginated-filename idx))
                idx)))))
 
 (defn paginate
@@ -127,7 +127,7 @@
         npages  (count pages)]
     (map list pages
               (map #(paginated-bar % npages url-prefix) numbers)
-              (map paginated-name numbers))))
+              (map paginated-filename numbers))))
 
 (defn truncatechars
   "If msg's length exeeds n, truncate it, appending '...'. "
