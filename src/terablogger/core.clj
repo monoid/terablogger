@@ -36,50 +36,45 @@
   "Blog's base dir."
   (:blog-dir *cfg*))
 
-(def ^:dynamic *data-dir*
-  "Blog's data dir."
-  (str *blog-dir* File/separator "data"))
-
 (defmacro with-config
   "Bind *cfg*, *blog-dir* and *data-dir* to values in cfg and execute body."
   [cfg & body]
   `(binding [*cfg* ~cfg]
      (binding [*blog-dir* (:blog-dir *cfg*)]
-       (binding [*data-dir* (str *blog-dir* File/separator "data")]
-         ~@body))))
+       ~@body)))
 
 (defn blog-path
   "Path for blog file."
-  [filename]
-  (str *blog-dir* File/separator filename))
+  [& filenames]
+  (string/join File/separator (cons *blog-dir* filenames)))
 
 (defn blog-file
   "java.io.File for blog file."
-  [filename]
-  (File. (blog-path filename)))
+  [& filenames]
+  (File. (apply blog-path filenames)))
 
 
 (defn data-path
   "Path for data file."
-  [filename]
-  (str *data-dir* File/separator filename))
+  [& filenames]
+  (string/join  File/separator (list* *blog-dir* "data" filenames)))
 
 (defn data-file
   "java.io.File for data file."
-  [filename]
-  (File. (data-path filename)))
+  [& filenames]
+  (File. (apply data-path filenames)))
 
-(defn archive-path [filename]
-  (str *blog-dir* File/separator "archives" File/separator filename))
+(defn archive-path [& filenames]
+  (string/join File/separator (list* *blog-dir* "archive" filenames)))
 
-(defn cache-path [filename]
-  (str *blog-dir* File/separator "parts" File/separator filename))
+(defn cache-path [& filenames]
+  (string/join File/separator (list* *blog-dir* "parts" filenames)))
 
 (defn data-lister
   "List files in data dir that match regex"
   [regex cmp]
   (fn []
-    (let [dir (blog-file "/data")]
+    (let [dir (blog-file "data")]
       (sort cmp
             (filter (partial re-seq regex)
                     (map
@@ -228,7 +223,7 @@
                p (cache-path month)
                pages (paginate sorted-posts p)]
          [pposts ptab pfname] pages
-         :let [path (str p File/separator pfname)]]
+         :let [path (cache-path month pfname)]]
      ;; Write each page
      ;; TODO: month-past has Web path separators...
      (spit* path
@@ -282,11 +277,11 @@
          name :name
          posts :files} cat
          ;; File base path
-         p (archive-path (format "cat_%s" id))]
+         cat-dir (format "cat_%s" id)]
     (dorun
      (for [[pposts ptab pfname] (paginate posts url)
            ;; File path
-           :let [path (str p File/separator pfname)]]
+           :let [path (archive-path cat-dir pfname)]]
        (spit* path
               (render (slurp "./blog/templates/category-archive.mustache")
                       {:cfg *cfg*
