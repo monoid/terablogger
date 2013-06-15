@@ -29,12 +29,12 @@
 
 (deftest paginated-bar-test2
   (testing "short paginating bar"
-    (is (= "[1] [<a href='/blog/parts/cat_1/index-page2.html'>2</a>]"
+    (is (= "[1] [<a rel='next' href='/blog/parts/cat_1/index-page2.html'>2</a>]"
            (paginated-bar 1 2 "/blog/parts/cat_1")))))
 
 (deftest paginated-bar-test1-2
   (testing "short paginating bar"
-    (is (= "[<a href='/blog/parts/cat_1/index.html'>1</a>] [2]"
+    (is (= "[<a rel='prev' href='/blog/parts/cat_1/index.html'>1</a>] [2]"
            (paginated-bar 2 2 "/blog/parts/cat_1")))))
 
 (deftest paginated-filename-test1
