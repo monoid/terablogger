@@ -237,17 +237,25 @@
      (spit* path
             (string/join "" (map get-cached-post-part pposts))))))
 
-(defn write-post-part
-    "Write post's part to cache."
+(defn write-post
+    "Write post to cache and to archive."
     [post]
-    (let [cfg   (assoc *cfg* :archive (str (:url *cfg*) "/archive"))
-          entry (assoc post
-                  :categories? (boolean (seq (:categories post))))
-          cpath (cache-path (post-path File/separator (:ID post)))]
-      (spit* cpath
-             (render (slurp "./blog/templates/entry.mustache")
-                     {:cfg cfg :entry entry}))))
-
+    (let [cfg      (assoc *cfg* :archive (str (:url *cfg*) "/archive"))
+          entry    (assoc post
+                     :categories? (boolean (seq (:categories post))))
+          cpath    (cache-path (post-path File/separator (:ID post)))
+          apath    (archive-path (post-path File/separator (:ID post)))
+          content  (render (slurp "./blog/templates/entry.mustache")
+                          {:cfg cfg :entry entry})
+          pcontent (render (slurp "./blog/templates/permalink-entry.mustache")
+                           {:cfg cfg :entry entry})]
+      ;; Cached part
+      (spit* cpath content)
+      ;; Full article page
+      (spit* apath (render (slurp "./blog/templates/permalink.mustache")
+                           {:body pcontent
+                            :cfg *cfg*
+                            :title (:TITLE entry)}))))
 
 (defn ls-posts
   [posts]
@@ -347,7 +355,7 @@
         (let [m (months (list-posts))]
           (dorun
            (for [post posts]
-             (write-post-part post)))
+             (write-post post)))
           ;; Main feed
           (write-feed [] posts)
           (write-months-parts m)
