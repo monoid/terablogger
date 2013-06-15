@@ -77,11 +77,8 @@
     (let [dir (blog-file "data")]
       (sort cmp
             (filter (partial re-seq regex)
-                    (map
-                     ;; Last component of path
-                     #(last (string/split (.getName %)
-                                          (re-pattern File/separator)))
-                     (file-seq dir)))))))
+                    (map (memfn getName)
+                         (file-seq dir)))))))
 
 (def list-cats
   "Function that return list of category files."
