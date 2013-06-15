@@ -162,7 +162,7 @@
           sep "index.html")))
 
 (defn post-ts
-  "Return "
+  "Return timestamp for post id."
   [id]
   (if (nil? id)
     nil
@@ -199,12 +199,14 @@
       :permalink (post-path id))))
 
 (defn month-path
+  "Post's month path from id."
   ([id]
      (month-path "/" id))
   ([sep id]
      (string/join sep (rest (re-matches #"^(\d+)-(\d+).*" id)))))
 
 (defn months
+  "Posts grouped by month-path."
   [posts]
   (group-by month-path posts))
 
