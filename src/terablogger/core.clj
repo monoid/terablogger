@@ -96,6 +96,11 @@
   "Function that return list of category posts."
   (data-lister #"\.txt$" #(compare %2 %1)))
 
+(defn spit*
+  "Spit data into path, ensuring its parents exists."
+  [path data]
+  (io/make-parents path)
+  (spit path data))
 
 (defn paginated-filename [idx]
   (if (= 1 idx)
@@ -226,10 +231,8 @@
          :let [path (str p File/separator pfname)]]
      ;; Write each page
      ;; TODO: month-past has Web path separators...
-     (do
-       (io/make-parents path)
-       (spit path
-             (string/join "" (map get-cached-post-part pposts)))))))
+     (spit* path
+            (string/join "" (map get-cached-post-part pposts))))))
 
 (defn write-post-part
     "Write post's part to cache."
@@ -238,12 +241,9 @@
           entry (assoc post
                   :categories? (boolean (seq (:categories post))))
           cpath (cache-path (post-path File/separator (:ID post)))]
-      (io/make-parents cpath)
-      (spit
-       cpath
-       (render
-        (slurp "./blog/templates/entry.mustache")
-        {:cfg cfg :entry entry}))))
+      (spit* cpath
+             (render (slurp "./blog/templates/entry.mustache")
+                     {:cfg cfg :entry entry}))))
 
 
 (defn ls-posts
@@ -287,14 +287,12 @@
      (for [[pposts ptab pfname] (paginate posts url)
            ;; File path
            :let [path (str p File/separator pfname)]]
-       (do
-         (io/make-parents path)
-         (spit path
-               (render (slurp "./blog/templates/category-archive.mustache")
-                       {:cfg *cfg*
-                        :cat cat
-                        :body (string/join "" (map get-cached-post-part pposts))
-                        :tab ptab})))))))
+       (spit* path
+              (render (slurp "./blog/templates/category-archive.mustache")
+                      {:cfg *cfg*
+                       :cat cat
+                       :body (string/join "" (map get-cached-post-part pposts))
+                       :tab ptab}))))))
 
 
 (defn write-cats
