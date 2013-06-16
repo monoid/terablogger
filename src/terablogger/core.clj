@@ -301,33 +301,39 @@
      :files files
      :set (set files)}))
 
+(defn write-pages
+  [template posts apath params]
+  (let [url (str (:url *cfg*) (string/join "/" apath))]
+    (dorun
+     (for [[pposts ptab pfname] (paginate posts url)
+           ;; File path
+           :let [path (apply blog-path (conj apath pfname))]]
+       (spit* path
+              (render template
+                      (assoc params
+                        :cfg *cfg*
+                        :body (string/join "" (map get-cached-post-part pposts))
+                        :tab ptab
+                        :feed (url-path (feed-apath apath)))))))))
 (defn write-cat
-  [cat cats]
+  [cat]
   (let [{id :id
          url :url
          name :name
          posts :files} cat
-         ;; File base path
-         cat-dir (format "cat_%s" id)]
-    (dorun
-     (for [[pposts ptab pfname] (paginate posts url)
-           ;; File path
-           :let [path (archive-path cat-dir pfname)]]
-       (spit* path
-              (render (slurp "./blog/templates/category-archive.mustache")
-                      {:cfg *cfg*
-                       :cat cat
-                       :body (string/join "" (map get-cached-post-part pposts))
-                       :tab ptab
-                       :feed (url-path (feed-apath ["archive" cat-dir]))}))))
-    (write-feed ["archive" cat-dir]
+         cat-apath ["archive" (format "cat_%s" id)]]
+    (write-pages (slurp "./blog/templates/category-archive.mustache")
+                 posts
+                 cat-apath
+                 {:cat cat})
+    (write-feed cat-apath
                 (map *posts* (take 10 posts)))))
 
 (defn write-cats
   [cats]
   (dorun
    (for [cat cats]
-     (write-cat cat cats))))
+     (write-cat cat))))
 
 (defn -main
   "I don't do a whole lot ... yet."
