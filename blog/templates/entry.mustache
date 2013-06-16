@@ -1,5 +1,5 @@
 <div class="item" id="{{entry.ID}}">
-<h2 class="date">{{&entry.DATE}}</h2>
+<h2 class="date">{{entry.DATE}}</h2>
 <div class="blogbody">
 <h3 class="title">{{&entry.TITLE}}</h3>
 <div class="item-description">
@@ -8,6 +8,7 @@
 </div>
 
 <div class="posted">
+Author: {{entry.AUTHOR}} |
 {{#cfg.permalink}}
 <a class="link" title="Article's permanent link" href="{{cfg.url}}/archive/{{entry.permalink}}">Permanent link</a>
 {{/cfg.permalink}}
