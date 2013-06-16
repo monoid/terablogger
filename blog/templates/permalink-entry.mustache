@@ -1,0 +1,14 @@
+<h2 class="date">{{entry.DATE}}</h2>
+<div class="blogbody">
+<h3 class="title" id="{{entry.ID}}">{{&entry.TITLE}}</h3>
+{{&entry.BODY}}
+</div>
+<div class="posted">
+Author: {{entry.AUTHOR}}
+{{#entry.categories?}}
+| Categories:
+{{#entry.categories}}
+  <a href="{{url}}">{{name}}</a>
+{{/entry.categories}}
+{{/entry.categories?}}
+</div>
