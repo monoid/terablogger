@@ -10,7 +10,8 @@
 
 (def test-config
   "This is not a full config, but enough for testing."
-  {:blog-dir (p "." "blog")})
+  {:blog-dir (p "." "blog")
+   :url ""})
 
 
 (deftest url-path-test1
@@ -20,7 +21,7 @@
 
 (deftest post-path-test1
   (testing "Basic post-path."
-    (is (= "2006/04/07/T12_04_59/index.html"
+    (is (= ["2006" "04" "07" "T12_04_59" "index.html"]
            (post-path "2006-04-07T12_04_59")))))
 
 (deftest post-path-test2
@@ -30,13 +31,13 @@
 
 (deftest post-path-test3
   (testing "post-path with extension."
-    (is (= "2006/04/07/T12_04_59/index.html"
+    (is (= ["2006" "04" "07" "T12_04_59" "index.html"]
            (post-path "2006-04-07T12_04_59.txt")))))
 
-(deftest post-month-test
-  (testing "post-month test."
-    (is (= "2006/04"
-           (month-path "2006-04-07T12_04_59.txt")))))
+(deftest month-apath-test
+  (testing "month-apath test."
+    (is (= ["2006" "04"]
+           (month-apath "2006-04-07T12_04_59.txt")))))
 
 (deftest paginated-bar-test1
   (testing "short paginating bar"
@@ -68,37 +69,42 @@
   (testing "blog-path test"
     (is (= (p "." "blog" "test.html"))
         (with-config test-config
-          (blog-path "test.html")))))
+          (blog-path ["test.html"])))))
 
 (deftest blog-path-test2
   (testing "blog-path test"
     (is (= (p "." "blog" "archive" "test.html")
            (with-config test-config
-             (blog-path "archive" "test.html"))))))
+             (blog-path ["archive" "test.html"]))))))
 
 (deftest data-path-test1
   (testing "data-path test"
     (is (= (p "." "blog" "data" "test.html")
            (with-config test-config
-             (data-path "test.html"))))))
+             (data-path ["test.html"]))))))
+
+(deftest archive-apath-test1
+  (testing "archive-apath test"
+    (is (= ["archive" "test.html"]
+           (archive-apath ["test.html"])))))
 
 (deftest archive-path-test1
   (testing "archive-path test"
     (is (= (p "." "blog" "archive" "test.html")
            (with-config test-config
-             (archive-path "test.html"))))))
+             (archive-path ["test.html"]))))))
 
 (deftest archive-path-test2
   (testing "archive-path test"
     (is (= (p "." "blog" "archive" "cat_1" "test.html")
            (with-config test-config
-             (archive-path "cat_1" "test.html"))))))
+             (archive-path ["cat_1" "test.html"]))))))
 
 (deftest cache-path-test1
   (testing "archive-path test"
     (is (= (p "." "blog" "parts" "test.html")
            (with-config test-config
-             (cache-path "test.html"))))))
+             (cache-path ["test.html"]))))))
 
 (deftest post-ts-test1
   (testing "post-ts"
