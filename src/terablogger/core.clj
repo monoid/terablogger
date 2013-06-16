@@ -338,7 +338,7 @@
                  cat-apath
                  {:cat cat})
     (write-feed cat-apath
-                (map *posts* (take 10 posts)))))
+                (map *posts* (take (:page-size *cfg*) posts)))))
 
 (defn write-cats
   [cats]
