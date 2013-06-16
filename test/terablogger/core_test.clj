@@ -100,3 +100,7 @@
            (with-config test-config
              (cache-path "test.html"))))))
 
+(deftest post-ts-test1
+  (testing "post-ts"
+    (is (= "2012-10-12T22:51:57Z"
+           (post-ts "2012-10-12T22_51_57.txt")))))
