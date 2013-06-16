@@ -13,6 +13,11 @@
   {:blog-dir (p "." "blog")})
 
 
+(deftest url-path-test1
+  (testing "url-path basic functionality"
+    (is (= "mary/had/a/little/lamb"
+           (url-path ["mary" "had" "a" "little" "lamb"])))))
+
 (deftest post-path-test1
   (testing "Basic post-path."
     (is (= "2006/04/07/T12_04_59/index.html"

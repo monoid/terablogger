@@ -36,12 +36,22 @@
   "Blog's base dir."
   (:blog-dir *cfg*))
 
+(def ^:dynamic *cats*
+  "Parsed categories.")
+
+(def ^:dynamic *posts*
+  "Parsed posts hash.")
+
 (defmacro with-config
   "Bind *cfg*, *blog-dir* and *data-dir* to values in cfg and execute body."
   [cfg & body]
   `(binding [*cfg* ~cfg]
      (binding [*blog-dir* (:blog-dir *cfg*)]
        ~@body)))
+
+(defn url-path
+  [apath]
+  (string/join "/" apath))
 
 (defn blog-path
   "Path for blog file."
@@ -136,6 +146,7 @@
     (str (string/trimr ; Trim for better text appearance
           (subs msg 0 (- n 3))) "...")
     msg))
+
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -253,6 +264,29 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
+;;; Atom Feed
+;;;
+
+(defn feed-apath
+  [apath]
+  (conj apath "atom.xml"))
+
+(defn write-feed
+  [apath posts]
+  (let [apath (feed-apath apath)
+        feed-url (url-path apath)]
+    (spit (apply blog-path apath)
+          (render (slurp "./blog/templates/atom.mustache")
+                  {:cfg *cfg*
+                   :entries (take (:page-size *cfg*) posts)
+                   :lastmodified (post-ts (:ID (first posts)))
+                   :self-url feed-url 
+                   }))
+    feed-url))
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
 ;;; Categories
 ;;;
 (defn parse-cat
@@ -268,7 +302,7 @@
      :set (set files)}))
 
 (defn write-cat
-  [cat]
+  [cat cats]
   (let [{id :id
          url :url
          name :name
@@ -284,38 +318,33 @@
                       {:cfg *cfg*
                        :cat cat
                        :body (string/join "" (map get-cached-post-part pposts))
-                       :tab ptab}))))))
-
+                       :tab ptab
+                       :feed (url-path (feed-apath ["archive" cat-dir]))}))))
+    (write-feed ["archive" cat-dir]
+                (map *posts* (take 10 posts)))))
 
 (defn write-cats
   [cats]
   (dorun
    (for [cat cats]
-     (write-cat cat))))
-
-(defn write-feed
-  [posts]
-  (spit (blog-path "atom.xml")
-        (render (slurp "./blog/templates/atom.mustache")
-                {:cfg *cfg*
-                 :entries (take (:page-size *cfg*) posts)
-                 :lastmodified (post-ts (:ID (first posts)))
-                 })))
+     (write-cat cat cats))))
 
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
   ;; work around dangerous default behaviour in Clojure
   (alter-var-root #'*read-eval* (constantly false))
-  (let [cats (map parse-cat (list-cats))
-        posts (map (partial parse-post cats)
-                   (list-posts))
-        m (months (list-posts))]
-    (dorun
-     (for [post posts]
-       (write-post-part post)))
-    (write-feed posts)
-    (write-months-parts m)
-    (write-cats cats)
-    (ls-posts (take (:page-size *cfg*) posts))))
+  (binding [*cats* (map parse-cat (list-cats))]
+    (let [posts (map (partial parse-post *cats*)
+                     (list-posts))]
+      (binding [*posts* (into {} (map #(vector (:ID %) %) posts))]
+        (let [m (months (list-posts))]
+          (dorun
+           (for [post posts]
+             (write-post-part post)))
+          ;; Main feed
+          (write-feed [] posts)
+          (write-months-parts m)
+          (write-cats *cats*)
+          (ls-posts (take (:page-size *cfg*) posts)))))))
 

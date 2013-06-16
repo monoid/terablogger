@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
-<feed version="0.3" xmlns="http://purl.org/atom/ns#" xmlns:dc="http://purl.org/dc/elements/1.1/">
-<title mode="escaped">{{cfg.title}}</title>
+<feed xmlns="http://www.w3.org/2005/Atom" xmlns:dc="http://purl.org/dc/elements/1.1/">
+<title type="html">{{cfg.title}}</title>
 <link rel="alternate" type="text/html" href="{{cfg.url}}" />
-<modified>{{lastmodified}}</modified>
+<link rel="self" type="application/atom+xml" href="{{cfg.url}}{{self-url}}" />>
+<updated>{{lastmodified}}</updated>
+<id>{{cfg.url}}</id>
 <author>
-<name>{{cfg.url}}</name>
-<url>{{cfg.url}}</url>
+<name>{{cfg.author}}</name>
 </author>
 {{#entries}}
 <entry>
-<title mode="escaped">{{TITLE}}</title>
+<title type="html">{{TITLE}}</title>
 <author>
 <name>{{AUTHOR}}</name>
 </author>
 <link rel="alternate" type="text/html" href="{{cfg.url}}/archive/{{permalink}}" />
 <id>{{cfg.url}}/archive/{{permalink}}</id>
-<issued>{{ts}}</issued>
-<modified>{{ts}}</modified>
-<created>{{ts}}</created>
+<published>{{ts}}</published>
+<updated>{{ts}}</updated>
 <dc:subject>{{categories2}}</dc:subject>
-<content type="application/xhtml+xml" xml:lang="en" xml:space="preserve" mode="escaped">
+<content type="html" xml:lang="{{cfg.lang}}" xml:space="preserve">
 <![CDATA[
 {{&BODY}}
 ]]>
