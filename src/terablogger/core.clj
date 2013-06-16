@@ -154,6 +154,8 @@
 ;;; Posts
 ;;;
 
+(declare feed-apath)
+
 (defn parse-headers
   "Parse post's headers, returning a hash."
   [headers]
@@ -255,7 +257,8 @@
       (spit* apath (render (slurp "./blog/templates/permalink.mustache")
                            {:body pcontent
                             :cfg *cfg*
-                            :title (:TITLE entry)}))))
+                            :title (:TITLE entry)
+                            :feed (url-path (feed-apath []))}))))
 
 (defn ls-posts
   [posts]
@@ -304,7 +307,7 @@
         [name & files] (string/split-lines txt)
         [_ id] (re-matches #"cat_([0-9]+).db$" file)]
     {:id id
-     :url (str (:url *cfg*) "/archives/cat_" id "/")
+     :url (str (:url *cfg*) (url-path ["archive" (str "cat_" id)]) "/")
      :name name
      :files files
      :set (set files)}))
