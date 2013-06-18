@@ -146,17 +146,17 @@
 (defn get-cached-post-part
   "Load part from cache."
   [post-id]
-  (slurp (apath/blog-path (apath/cache-apath (post-apath post-id)))))
+  (slurp (apath/blog-path (apath/cache (post-apath post-id)))))
 
 (defn write-months-parts
   [months]
   (dorun
    (for [[month posts] months
          :let [sorted-posts (sort #(compare %2 %1) posts)
-               p (apath/full-url-path (apath/archive-apath month))
+               p (apath/full-url-path (apath/archive month))
                pages (paginate sorted-posts p)]
          [pposts ptab pfname] pages
-         :let [apath (apath/cache-apath (conj month pfname))]]
+         :let [apath (apath/cache (conj month pfname))]]
      ;; Write each page
      (spit* apath
             (string/join "" (map get-cached-post-part pposts))))))
@@ -164,11 +164,12 @@
 (defn write-post
     "Write post to cache and to archive."
     [post]
-    (let [cfg      (assoc cfg/*cfg* :archive (str (:url cfg/*cfg*) "/archive"))
+    (let [cfg      (assoc cfg/*cfg* :archive
+                          (apath/full-url-path (apath/archive [])))
           entry    (assoc post
                      :categories? (boolean (seq (:categories post))))
-          capath    (apath/cache-apath (post-apath (:ID post)))
-          aapath    (apath/archive-apath (post-apath (:ID post)))
+          capath    (apath/cache (post-apath (:ID post)))
+          aapath    (apath/archive (post-apath (:ID post)))
           content  (render (slurp "./blog/templates/entry.mustache")
                           {:cfg cfg :entry entry})
           pcontent (render (slurp "./blog/templates/permalink-entry.mustache")
@@ -229,7 +230,7 @@
         [name & files] (string/split-lines txt)
         [_ id] (re-matches #"cat_([0-9]+).db$" file)]
     {:id id
-     :url (apath/full-url-path (apath/archive-apath [(str "cat_" id) ""]))
+     :url (apath/full-url-path (apath/archive [(str "cat_" id) ""]))
      :name name
      :files files
      :set (set files)}))

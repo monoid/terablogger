@@ -21,10 +21,10 @@
   [filename]
   (string/join  File/separator (list cfg/*blog-dir* "data" filename)))
 
-(defn archive-apath [apath]
+(defn archive [apath]
   (into ["archive"] apath))
 
-(defn cache-apath [apath]
+(defn cache [apath]
   (into ["parts"] apath))
 
 (defn data-lister

@@ -40,11 +40,11 @@
 (deftest archive-apath-test1
   (testing "archive-apath test"
     (is (= ["archive" "test.html"]
-           (archive-apath ["test.html"])))))
+           (archive ["test.html"])))))
 
 (deftest cache-apath-test1
   (testing "archive-path test"
     (is (= ["parts" "test.html"]
            (with-config test-config
-             (cache-apath ["test.html"]))))))
+             (cache ["test.html"]))))))
 
