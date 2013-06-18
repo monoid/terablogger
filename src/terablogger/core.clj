@@ -2,39 +2,10 @@
   (:import java.io.File)
   (:use clostache.parser)
   (:require [clojure.string :as string]
-            [clojure.java.io :as io])
+            [clojure.java.io :as io]
+            [terablogger.cfg :as cfg]
+            [terablogger.apath :as apath])
   (:gen-class))
-
-(def PAGE-SIZE
-  "Default page size"
-  10)
-
-(defn default-config []
-  "Return default config."
-  {:blog-dir (or (System/getenv "BLOG_DIR")
-                 "./blog")
-   :page-size PAGE-SIZE
-   :url "http://example-blog.com/blog/"
-   :domain "example-blog.com"
-   :path "/blog"
-   :style "styles/tb_clean.css"
-   :lang "en"
-   :title "Example blog"
-   :description "Long blog description."
-   :author "George W. Bush Jr."
-   :permalink true
-   ;; Input format
-   :format "html" ; the only supported
-   :html-auto-break true})
-
-
-(def ^:dynamic *cfg*
-  "Config."
-  (default-config))
-
-(def ^:dynamic *blog-dir*
-  "Blog's base dir."
-  (:blog-dir *cfg*))
 
 (def ^:dynamic *cats*
   "Parsed categories.")
@@ -42,59 +13,14 @@
 (def ^:dynamic *posts*
   "Parsed posts hash.")
 
-(defmacro with-config
-  "Bind *cfg*, *blog-dir* and *data-dir* to values in cfg and execute body."
-  [cfg & body]
-  `(binding [*cfg* ~cfg]
-     (binding [*blog-dir* (:blog-dir *cfg*)]
-       ~@body)))
-
-(defn url-path
-  [apath]
-  (string/join "/" apath))
-
-(defn blog-path
-  "Path for blog file."
-  [apath]
-  (string/join File/separator (cons *blog-dir* apath)))
-
-(defn blog-file
-  "java.io.File for blog file."
-  [apath]
-  (File. (blog-path apath)))
-
-
-(defn data-path
-  "Path for data file."
-  [filename]
-  (string/join  File/separator (list *blog-dir* "data" filename)))
-
-(defn archive-apath [apath]
-  (into ["archive"] apath))
-
-(defn archive-path [apath]
-  (string/join File/separator (list* *blog-dir* "archive" apath)))
-
-(defn cache-path [apath]
-  (string/join File/separator (list* *blog-dir* "parts" apath)))
-
-(defn data-lister
-  "List files in data dir that match regex"
-  [regex cmp]
-  (fn []
-    (let [dir (blog-file ["data"])]
-      (sort cmp
-            (filter (partial re-seq regex)
-                    (map (memfn getName)
-                         (file-seq dir)))))))
 
 (def list-cats
   "Function that return list of category files."
-  (data-lister #"\.db$" compare))
+  (apath/data-lister #"\.db$" compare))
 
 (def list-posts
   "Function that return list of category posts."
-  (data-lister #"\.txt$" #(compare %2 %1)))
+  (apath/data-lister #"\.txt$" #(compare %2 %1)))
 
 (defn spit*
   "Spit data into path, ensuring its parents exists."
@@ -131,7 +57,7 @@
   "Split sequence of posts into pages of :page-size length."
   [posts url-prefix]
   (let [numbers (iterate inc 1)
-        pages   (partition (:page-size *cfg*) posts)
+        pages   (partition (:page-size cfg/*cfg*) posts)
         npages  (count pages)]
     (map list pages
               (map #(paginated-bar % npages url-prefix) numbers)
@@ -195,7 +121,7 @@
 (defn parse-post 
   "Parse blog post."
   [cats id]
-  (let [txt (slurp (data-path id))
+  (let [txt (slurp (apath/data-path id))
         lines (string/split-lines txt)
         [headers body] (split-with #(not (re-seq #"^-----$" %)) lines)
         categories (filter #((:set %) id) cats)
@@ -222,18 +148,18 @@
 (defn get-cached-post-part
   "Load part from cache."
   [post-id]
-  (slurp (cache-path (post-path File/separator post-id))))
+  (slurp (apath/cache-path [(post-path File/separator post-id)])))
 
 (defn write-months-parts
   [months]
   (dorun
    (for [[month posts] months
          :let [sorted-posts (sort #(compare %2 %1) posts)
-               p (str (:url *cfg*)
-                      (url-path (archive-apath month)))
+               p (str (:url cfg/*cfg*)
+                      (apath/url-path (apath/archive-apath month)))
                pages (paginate sorted-posts p)]
          [pposts ptab pfname] pages
-         :let [path (cache-path month pfname)]]
+         :let [path (apath/cache-path (conj month pfname))]]
      ;; Write each page
      (spit* path
             (string/join "" (map get-cached-post-part pposts))))))
@@ -241,11 +167,11 @@
 (defn write-post
     "Write post to cache and to archive."
     [post]
-    (let [cfg      (assoc *cfg* :archive (str (:url *cfg*) "/archive"))
+    (let [cfg      (assoc cfg/*cfg* :archive (str (:url cfg/*cfg*) "/archive"))
           entry    (assoc post
                      :categories? (boolean (seq (:categories post))))
-          cpath    (cache-path [(post-path File/separator (:ID post))])
-          apath    (archive-path [(post-path File/separator (:ID post))])
+          cpath    (apath/cache-path [(post-path File/separator (:ID post))])
+          apath    (apath/archive-path [(post-path File/separator (:ID post))])
           content  (render (slurp "./blog/templates/entry.mustache")
                           {:cfg cfg :entry entry})
           pcontent (render (slurp "./blog/templates/permalink-entry.mustache")
@@ -255,9 +181,9 @@
       ;; Full article page
       (spit* apath (render (slurp "./blog/templates/permalink.mustache")
                            {:body pcontent
-                            :cfg *cfg*
+                            :cfg cfg/*cfg*
                             :title (:TITLE entry)
-                            :feed (url-path (feed-apath []))}))))
+                            :feed (apath/url-path (feed-apath []))}))))
 
 (defn ls-posts
   [posts]
@@ -284,11 +210,11 @@
 (defn write-feed
   [apath posts]
   (let [apath (feed-apath apath)
-        feed-url (url-path apath)]
-    (spit (blog-path apath)
+        feed-url (apath/url-path apath)]
+    (spit (apath/blog-path apath)
           (render (slurp "./blog/templates/atom.mustache")
-                  {:cfg *cfg*
-                   :entries (take (:page-size *cfg*) posts)
+                  {:cfg cfg/*cfg*
+                   :entries (take (:page-size cfg/*cfg*) posts)
                    :lastmodified (post-ts (:ID (first posts)))
                    :self-url feed-url 
                    }))
@@ -302,29 +228,29 @@
 (defn parse-cat
   "Parse category file."
   [file]
-  (let [txt (slurp (data-path file))
+  (let [txt (slurp (apath/data-path file))
         [name & files] (string/split-lines txt)
         [_ id] (re-matches #"cat_([0-9]+).db$" file)]
     {:id id
-     :url (str (:url *cfg*) (url-path ["archive" (str "cat_" id)]) "/")
+     :url (str (:url cfg/*cfg*) (apath/url-path ["archive" (str "cat_" id)]) "/")
      :name name
      :files files
      :set (set files)}))
 
 (defn write-pages
   [template posts apath params]
-  (let [url (str (:url *cfg*) (string/join "/" apath))]
+  (let [url (str (:url cfg/*cfg*) (string/join "/" apath))]
     (dorun
      (for [[pposts ptab pfname] (paginate posts url)
            ;; File path
-           :let [path (blog-path (conj apath pfname))]]
+           :let [path (apath/blog-path (conj apath pfname))]]
        (spit* path
               (render template
                       (assoc params
-                        :cfg *cfg*
+                        :cfg cfg/*cfg*
                         :body (string/join "" (map get-cached-post-part pposts))
                         :tab ptab
-                        :feed (url-path (feed-apath apath)))))))))
+                        :feed (apath/url-path (feed-apath apath)))))))))
 
 (defn write-cat
   [cat]
@@ -338,7 +264,7 @@
                  cat-apath
                  {:cat cat})
     (write-feed cat-apath
-                (map *posts* (take (:page-size *cfg*) posts)))))
+                (map *posts* (take (:page-size cfg/*cfg*) posts)))))
 
 (defn write-cats
   [cats]
@@ -356,12 +282,12 @@
                      (list-posts))]
       (binding [*posts* (into {} (map #(vector (:ID %) %) posts))]
         (let [m (months (list-posts))]
-          ;; (dorun
-          ;;  (for [post posts]
-          ;;    (write-post post)))
-          ;; ;; Main feed
-          ;; (write-feed [] posts)
-          ;; (write-months-parts m)
-          ;; (write-cats *cats*)
-          (ls-posts (take (:page-size *cfg*) posts)))))))
+          (dorun
+           (for [post posts]
+             (write-post post)))
+          ;; Main feed
+          (write-feed [] posts)
+          (write-months-parts m)
+          (write-cats *cats*)
+          (ls-posts (take (:page-size cfg/*cfg*) posts)))))))
 
