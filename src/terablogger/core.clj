@@ -1,5 +1,4 @@
 (ns terablogger.core
-  (:import java.io.File)
   (:use clostache.parser)
   (:require [clojure.string :as string]
             [clojure.java.io :as io]
@@ -24,9 +23,10 @@
 
 (defn spit*
   "Spit data into path, ensuring its parents exists."
-  [path data]
-  (io/make-parents path)
-  (spit path data))
+  [apath data]
+  (let [path (apath/blog-path apath)]
+   (io/make-parents path)
+   (spit path data)))
 
 (defn paginated-filename [idx]
   (if (= 1 idx)
@@ -88,13 +88,11 @@
                     [(keyword key) val])
                  headers)))
 
-(defn post-path
+(defn post-apath
   ([id]
      (conj (subvec (re-matches #"^(\d+)-(\d+)-(\d+)(T[0-9_]+).*" id)
                    1)
-          "index.html"))
-  ([sep id]
-     (string/join sep (post-path id))))
+          "index.html")))
 
 (defn post-ts
   "Return timestamp for post id."
@@ -132,7 +130,7 @@
       :categories2 (string/join ", " (map :name categories))
       :ID id
       :ts (post-ts id)
-      :permalink (post-path id))))
+      :permalink (apath/full-url-path (post-apath id)))))
 
 (defn month-apath
   "Post's month path from id."
@@ -148,20 +146,19 @@
 (defn get-cached-post-part
   "Load part from cache."
   [post-id]
-  (slurp (apath/cache-path [(post-path File/separator post-id)])))
+  (slurp (apath/blog-path (apath/cache-apath (post-apath post-id)))))
 
 (defn write-months-parts
   [months]
   (dorun
    (for [[month posts] months
          :let [sorted-posts (sort #(compare %2 %1) posts)
-               p (str (:url cfg/*cfg*)
-                      (apath/url-path (apath/archive-apath month)))
+               p (apath/full-url-path (apath/archive-apath month))
                pages (paginate sorted-posts p)]
          [pposts ptab pfname] pages
-         :let [path (apath/cache-path (conj month pfname))]]
+         :let [apath (apath/cache-apath (conj month pfname))]]
      ;; Write each page
-     (spit* path
+     (spit* apath
             (string/join "" (map get-cached-post-part pposts))))))
 
 (defn write-post
@@ -170,20 +167,20 @@
     (let [cfg      (assoc cfg/*cfg* :archive (str (:url cfg/*cfg*) "/archive"))
           entry    (assoc post
                      :categories? (boolean (seq (:categories post))))
-          cpath    (apath/cache-path [(post-path File/separator (:ID post))])
-          apath    (apath/archive-path [(post-path File/separator (:ID post))])
+          capath    (apath/cache-apath (post-apath (:ID post)))
+          aapath    (apath/archive-apath (post-apath (:ID post)))
           content  (render (slurp "./blog/templates/entry.mustache")
                           {:cfg cfg :entry entry})
           pcontent (render (slurp "./blog/templates/permalink-entry.mustache")
                            {:cfg cfg :entry entry})]
       ;; Cached part
-      (spit* cpath content)
+      (spit* capath content)
       ;; Full article page
-      (spit* apath (render (slurp "./blog/templates/permalink.mustache")
-                           {:body pcontent
-                            :cfg cfg/*cfg*
-                            :title (:TITLE entry)
-                            :feed (apath/url-path (feed-apath []))}))))
+      (spit* aapath (render (slurp "./blog/templates/permalink.mustache")
+                            {:body pcontent
+                             :cfg cfg/*cfg*
+                             :title (:TITLE entry)
+                             :feed (apath/url-path (feed-apath []))}))))
 
 (defn ls-posts
   [posts]
@@ -232,19 +229,19 @@
         [name & files] (string/split-lines txt)
         [_ id] (re-matches #"cat_([0-9]+).db$" file)]
     {:id id
-     :url (str (:url cfg/*cfg*) (apath/url-path ["archive" (str "cat_" id)]) "/")
+     :url (apath/full-url-path (apath/archive-apath [(str "cat_" id) ""]))
      :name name
      :files files
      :set (set files)}))
 
 (defn write-pages
   [template posts apath params]
-  (let [url (str (:url cfg/*cfg*) (string/join "/" apath))]
+  (let [url (apath/full-url-path apath)]
     (dorun
      (for [[pposts ptab pfname] (paginate posts url)
            ;; File path
-           :let [path (apath/blog-path (conj apath pfname))]]
-       (spit* path
+           :let [papath (conj apath pfname)]]
+       (spit* papath
               (render template
                       (assoc params
                         :cfg cfg/*cfg*

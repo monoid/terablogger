@@ -7,16 +7,14 @@
   [apath]
   (string/join "/" apath))
 
+(defn full-url-path
+  [apath]
+  [str (:url cfg/*cfg*) (url-path apath)])
+
 (defn blog-path
   "Path for blog file."
   [apath]
   (string/join File/separator (cons cfg/*blog-dir* apath)))
-
-(defn blog-file
-  "java.io.File for blog file."
-  [apath]
-  (File. (blog-path apath)))
-
 
 (defn data-path
   "Path for data file."
@@ -26,19 +24,16 @@
 (defn archive-apath [apath]
   (into ["archive"] apath))
 
-(defn archive-path [apath]
-  (string/join File/separator (list* cfg/*blog-dir* "archive" apath)))
-
-(defn cache-path [apath]
-  (string/join File/separator (list* cfg/*blog-dir* "parts" apath)))
+(defn cache-apath [apath]
+  (into ["parts"] apath))
 
 (defn data-lister
   "List files in data dir that match regex"
   [regex cmp]
   (fn []
-    (let [dir (blog-file ["data"])]
+    (let [dir (blog-path ["data"])]
       (sort cmp
             (filter (partial re-seq regex)
                     (map (memfn getName)
-                         (file-seq dir)))))))
+                         (file-seq (File. dir))))))))
 

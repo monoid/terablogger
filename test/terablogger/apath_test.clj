@@ -42,21 +42,9 @@
     (is (= ["archive" "test.html"]
            (archive-apath ["test.html"])))))
 
-(deftest archive-path-test1
+(deftest cache-apath-test1
   (testing "archive-path test"
-    (is (= (p "." "blog" "archive" "test.html")
+    (is (= ["parts" "test.html"]
            (with-config test-config
-             (archive-path ["test.html"]))))))
-
-(deftest archive-path-test2
-  (testing "archive-path test"
-    (is (= (p "." "blog" "archive" "cat_1" "test.html")
-           (with-config test-config
-             (archive-path ["cat_1" "test.html"]))))))
-
-(deftest cache-path-test1
-  (testing "archive-path test"
-    (is (= (p "." "blog" "parts" "test.html")
-           (with-config test-config
-             (cache-path ["test.html"]))))))
+             (cache-apath ["test.html"]))))))
 
