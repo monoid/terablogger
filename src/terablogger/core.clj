@@ -1,6 +1,6 @@
 (ns terablogger.core
-  (:use clostache.parser)
-  (:require [clojure.string :as string]
+  (:require [clostache.parser :refer :all]
+            [clojure.string :as string]
             [terablogger.cfg :as cfg]
             [terablogger.apath :as apath])
   (:gen-class))
