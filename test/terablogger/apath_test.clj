@@ -12,12 +12,18 @@
 (def test-config
   "This is not a full config, but enough for testing."
   {:blog-dir (p "." "blog")
-   :url ""})
+   :url "http://test/blog/"})
 
 (deftest url-path-test1
   (testing "url-path basic functionality"
     (is (= "mary/had/a/little/lamb"
            (url-path ["mary" "had" "a" "little" "lamb"])))))
+
+(deftest full-url-path-test1
+  (testing "full-url-path function"
+    (is (= "http://test/blog/mary/had/a/little/lamb"
+           (with-config test-config
+             (full-url-path ["mary" "had" "a" "little" "lamb"]))))))
 
 (deftest blog-path-test1
   (testing "blog-path test"

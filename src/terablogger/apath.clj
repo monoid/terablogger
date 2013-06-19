@@ -20,7 +20,7 @@
 (defn full-url-path
   "Convert apath to full URL (with (*cfg* :url))."
   [apath]
-  [str (:url cfg/*cfg*) (url-path apath)])
+  (str (:url cfg/*cfg*) (url-path apath)))
 
 (defn blog-path
   "Path for file in blog dir."
