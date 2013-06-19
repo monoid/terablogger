@@ -267,17 +267,19 @@
   [& args]
   ;; work around dangerous default behaviour in Clojure
   (alter-var-root #'*read-eval* (constantly false))
-  (binding [*cats* (map parse-cat (list-cats))]
-    (let [posts (map (partial parse-post *cats*)
-                     (list-posts))]
-      (binding [*posts* (into {} (map #(vector (:ID %) %) posts))]
-        (let [m (months (list-posts))]
-          (dorun
-           (for [post posts]
-             (write-post post)))
-          ;; Main feed
-          (write-feed [] posts)
-          (write-months-parts m)
-          (write-cats *cats*)
-          (ls-posts (take (:page-size cfg/*cfg*) posts)))))))
+  (cfg/with-config (cfg/load-config)
+    (binding [*cats* (map parse-cat (list-cats))]
+      (let [plist (list-posts)
+            posts (map (partial parse-post *cats*)
+                       plist)]
+        (binding [*posts* (into {} (map #(vector (:ID %) %) posts))]
+          (let [m (months (list-posts))]
+            (dorun
+             (for [post posts]
+               (write-post post)))
+            ;; Main feed
+            (write-feed [] posts)
+            (write-months-parts m)
+            (write-cats *cats*)
+            (ls-posts (take (:page-size cfg/*cfg*) posts))))))))
 

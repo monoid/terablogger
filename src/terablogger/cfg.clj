@@ -1,4 +1,5 @@
-(ns terablogger.cfg)
+(ns terablogger.cfg
+  (:require clojure.edn))
 
 (def PAGE-SIZE
   "Default page size"
@@ -37,3 +38,9 @@
   `(binding [*cfg* ~cfg]
      (binding [*blog-dir* (:blog-dir *cfg*)]
        ~@body)))
+
+(defn load-config
+  []
+  ;; STUB implementation
+  (or (clojure.edn/read-string (slurp "terablogger.conf"))
+      *cfg*))

@@ -1,0 +1,14 @@
+{:blog-dir "./blog"
+ :page-size 10
+ :url "http://example-blog.com/blog/"
+ :domain "example-blog.com"
+ :path "/blog"
+ :style "styles/tb_clean.css"
+ :lang "en"
+ :title "Example blog"
+ :description "Long blog description."
+ :author "George W. Bush Jr."
+ :permalink true
+ ;; Input format
+ :format "html" ; the only supported
+ :html-auto-break true}
