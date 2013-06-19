@@ -126,9 +126,9 @@
 
 (defn month-apath
   "Post's month path from id."
-  ([id]
-     (subvec (re-matches #"^(\d+)-(\d+).*" id)
-             1)))
+  [id]
+  (subvec (re-matches #"^(\d+)-(\d+).*" id)
+          1))
 
 (defn months
   "Posts grouped by month-path."
