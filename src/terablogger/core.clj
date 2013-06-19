@@ -173,7 +173,7 @@
                                   {:body pcontent
                                    :cfg cfg/*cfg*
                                    :title (:TITLE entry)
-                                   :feed (apath/url-path (feed-apath []))}))))
+                                   :feed (apath/full-url-path (feed-apath []))}))))
 
 (defn ls-posts
   [posts]
@@ -200,7 +200,7 @@
 (defn write-feed
   [apath posts]
   (let [apath (feed-apath apath)
-        feed-url (apath/url-path apath)]
+        feed-url (apath/full-url-path apath)]
     (apath/spit* apath
                  (render (slurp "./blog/templates/atom.mustache")
                          {:cfg cfg/*cfg*
