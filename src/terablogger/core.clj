@@ -1,7 +1,6 @@
 (ns terablogger.core
   (:use clostache.parser)
   (:require [clojure.string :as string]
-            [clojure.java.io :as io]
             [terablogger.cfg :as cfg]
             [terablogger.apath :as apath])
   (:gen-class))
@@ -20,13 +19,6 @@
 (def list-posts
   "Function that return list of category posts."
   (apath/data-lister #"\.txt$" #(compare %2 %1)))
-
-(defn spit*
-  "Spit data into path, ensuring its parents exists."
-  [apath data]
-  (let [path (apath/blog-path apath)]
-   (io/make-parents path)
-   (spit path data)))
 
 (defn paginated-filename [idx]
   (if (= 1 idx)
@@ -158,8 +150,8 @@
          [pposts ptab pfname] pages
          :let [apath (apath/cache (conj month pfname))]]
      ;; Write each page
-     (spit* apath
-            (string/join "" (map get-cached-post-part pposts))))))
+     (apath/spit* apath
+                  (string/join "" (map get-cached-post-part pposts))))))
 
 (defn write-post
     "Write post to cache and to archive."
@@ -175,13 +167,13 @@
           pcontent (render (slurp "./blog/templates/permalink-entry.mustache")
                            {:cfg cfg :entry entry})]
       ;; Cached part
-      (spit* capath content)
+      (apath/spit* capath content)
       ;; Full article page
-      (spit* aapath (render (slurp "./blog/templates/permalink.mustache")
-                            {:body pcontent
-                             :cfg cfg/*cfg*
-                             :title (:TITLE entry)
-                             :feed (apath/url-path (feed-apath []))}))))
+      (apath/spit* aapath (render (slurp "./blog/templates/permalink.mustache")
+                                  {:body pcontent
+                                   :cfg cfg/*cfg*
+                                   :title (:TITLE entry)
+                                   :feed (apath/url-path (feed-apath []))}))))
 
 (defn ls-posts
   [posts]
@@ -209,13 +201,13 @@
   [apath posts]
   (let [apath (feed-apath apath)
         feed-url (apath/url-path apath)]
-    (spit (apath/blog-path apath)
-          (render (slurp "./blog/templates/atom.mustache")
-                  {:cfg cfg/*cfg*
-                   :entries (take (:page-size cfg/*cfg*) posts)
-                   :lastmodified (post-ts (:ID (first posts)))
-                   :self-url feed-url 
-                   }))
+    (apath/spit* apath
+                 (render (slurp "./blog/templates/atom.mustache")
+                         {:cfg cfg/*cfg*
+                          :entries (take (:page-size cfg/*cfg*) posts)
+                          :lastmodified (post-ts (:ID (first posts)))
+                          :self-url feed-url 
+                          }))
     feed-url))
 
 
@@ -242,13 +234,13 @@
      (for [[pposts ptab pfname] (paginate posts url)
            ;; File path
            :let [papath (conj apath pfname)]]
-       (spit* papath
-              (render template
-                      (assoc params
-                        :cfg cfg/*cfg*
-                        :body (string/join "" (map get-cached-post-part pposts))
-                        :tab ptab
-                        :feed (apath/url-path (feed-apath apath)))))))))
+       (apath/spit* papath
+                    (render template
+                            (assoc params
+                              :cfg cfg/*cfg*
+                              :body (string/join "" (map get-cached-post-part pposts))
+                              :tab ptab
+                              :feed (apath/url-path (feed-apath apath)))))))))
 
 (defn write-cat
   [cat]

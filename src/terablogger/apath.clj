@@ -1,6 +1,7 @@
 (ns terablogger.apath
   (:import java.io.File)
   (:require [terablogger.cfg :as cfg]
+            [clojure.java.io :as io]
             [clojure.string :as string]))
 
 ;;;
@@ -51,4 +52,11 @@ data dir has no nested folders."
             (filter (partial re-seq regex)
                     (map (memfn getName)
                          (file-seq (File. dir))))))))
+
+(defn spit*
+  "Spit data into apath, ensuring its parents exists."
+  [apath data]
+  (let [path (blog-path apath)]
+   (io/make-parents path)
+   (spit path data)))
 
