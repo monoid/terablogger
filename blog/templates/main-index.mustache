@@ -28,22 +28,9 @@
 
 <div id="links">
 
+<!--
 <div class="calendar">
 $NB_Calendar
-</div>
-
-<div style="width: 125px; margin: auto;">
-<script type="text/javascript"><!--
-google_ad_client = "pub-4154562003350685";
-/* 125x125, Main, создано 25.05.09 */
-google_ad_slot = "3814655062";
-google_ad_width = 125;
-google_ad_height = 125;
-//-->
-</script>
-<script async type="text/javascript"
-src="http://pagead2.googlesyndication.com/pagead/show_ads.js">
-</script>
 </div>
 
 <div class="side">
@@ -57,34 +44,25 @@ $NB_ArticleLinks
 <div class="side">
 $NB_MainLinks
 </div>
+-->
 
 <div class="sidetitle">
-Последние записи
+Categories
 </div>
-
 <div class="side">
-$NB_RecentEntries
-</div>
-
-<div class="sidetitle">
-Разделы
-</div>
-
-<div class="side">
-$NB_CategoryLinks
+{{&categories}}
 </div>
 
 <div class="sidetitle">
-Архив
+Archive
 </div>
-
 <div class="side">
-<a href="${BLOG_PATH}$ARCHIVES_DIR/$NB_INDEX">Archive Index</a><br />
-$NB_MonthLinks
+<a href="{{archive-index}}">Archive Index</a><br />
+{{&month-links}}
 </div>
 
 <div class="syndicate">
-Syndicate this site: <a href="${BLOG_PATH}rss.$NB_SYND_FILETYPE">RSS</a>, <a href="${BLOG_PATH}atom.$NB_SYND_FILETYPE">Atom</a>
+Syndicate this site: <a href="{{feed}}">Atom</a>
 </div>
 
 <div class="sidetitle">
@@ -100,11 +78,12 @@ $BLOG_CONTACT
 </div>
 
 <div class="side">
-$NB_BlogStatus
+Total number of posts: {{count}}<br />
+Last updated: {{last}}
 </div>
 
 <div class="powered">
-Powered by<br /><a rel="nofollow" href="http://nanoblogger.sourceforge.net">NanoBlogger $VERSION</a><br />
+Powered by<br />TeraBlogger<br />
 </div>
 
 </div>

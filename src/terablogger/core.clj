@@ -203,12 +203,32 @@
                               :tab ptab
                               :feed (apath/full-url-path (feed-apath apath)))))))))
 
-(defn write-main-pages
+(defn main-categories-html
+  [cats]
+  (string/join "<br>\n"
+               (for [cat cats]
+                 (format "<a href='%s'>%s</a>&nbsp;%d"
+                         (:url cat)
+                         (:name cat)
+                         (count (:files cat))))))
+
+(defn main-month-links
   [posts]
+  (string/join "<br>\n"
+               ;; TODO STUB
+               []))
+
+(defn write-main-pages
+  [posts cats]
   (write-pages (slurp "./blog/templates/main-index.mustache")
                posts
                []
                {:feed (apath/full-url-path (feed-apath []))
+                :categories (main-categories-html cats)
+                :archive-index (apath/full-url-path (apath/archive ["index.html"]))
+                :month-links (main-month-links posts)
+                :count (count posts)
+                :last (:DATE (parse-post cats (first posts)))
                } ; TODO: additional parameters like calendar, sidebar etc.
                ))
 
@@ -294,6 +314,6 @@
             (write-feed [] posts)
             (write-months-parts m)
             (write-cats *cats*)
-            (write-main-pages plist)
+            (write-main-pages plist *cats*)
             (ls-posts (take (:page-size cfg/*cfg*) posts))))))))
 
