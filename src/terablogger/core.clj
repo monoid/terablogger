@@ -188,6 +188,31 @@
        (println (format " - %s" (:DATE p)))))))
 
 
+(defn write-pages
+  [template posts apath params]
+  (let [url (apath/full-url-path apath)]
+    (dorun
+     (for [[pposts ptab pfname] (paginate posts url)
+           ;; File path
+           :let [papath (conj apath pfname)]]
+       (apath/spit* papath
+                    (render template
+                            (assoc params
+                              :cfg cfg/*cfg*
+                              :body (string/join "" (map get-cached-post-part pposts))
+                              :tab ptab
+                              :feed (apath/full-url-path (feed-apath apath)))))))))
+
+(defn write-main-pages
+  [posts]
+  (write-pages (slurp "./blog/templates/main-index.mustache")
+               posts
+               []
+               {:feed (apath/full-url-path (feed-apath []))
+               } ; TODO: additional parameters like calendar, sidebar etc.
+               ))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; Atom Feed
@@ -227,21 +252,6 @@
      :files files
      :set (set files)}))
 
-(defn write-pages
-  [template posts apath params]
-  (let [url (apath/full-url-path apath)]
-    (dorun
-     (for [[pposts ptab pfname] (paginate posts url)
-           ;; File path
-           :let [papath (conj apath pfname)]]
-       (apath/spit* papath
-                    (render template
-                            (assoc params
-                              :cfg cfg/*cfg*
-                              :body (string/join "" (map get-cached-post-part pposts))
-                              :tab ptab
-                              :feed (apath/url-path (feed-apath apath)))))))))
-
 (defn write-cat
   [cat]
   (let [{id :id
@@ -253,8 +263,11 @@
                  posts
                  cat-apath
                  {:cat cat})
-    (write-feed cat-apath
-                (map *posts* (take (:page-size cfg/*cfg*) posts)))))
+    (cfg/with-config (assoc cfg/*cfg*
+                       :title (format "%s : %s"
+                                      name (:title cfg/*cfg*)))
+      (write-feed cat-apath
+                  (map *posts* (take (:page-size cfg/*cfg*) posts))))))
 
 (defn write-cats
   [cats]
@@ -281,5 +294,6 @@
             (write-feed [] posts)
             (write-months-parts m)
             (write-cats *cats*)
+            (write-main-pages plist)
             (ls-posts (take (:page-size cfg/*cfg*) posts))))))))
 
