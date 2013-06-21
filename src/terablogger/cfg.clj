@@ -42,5 +42,5 @@
 (defn load-config
   []
   ;; STUB implementation
-  (or (clojure.edn/read-string (slurp "terablogger.conf"))
-      *cfg*))
+  (into *cfg* (or (clojure.edn/read-string (slurp "terablogger.conf"))
+                  {})))
