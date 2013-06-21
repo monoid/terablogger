@@ -213,23 +213,40 @@
                          (count (:files cat))))))
 
 (defn main-month-links
-  [posts]
+  [months]
   (string/join "<br>\n"
-               ;; TODO STUB
-               []))
+               (for [m (take (:page-size cfg/*cfg*) (sort
+                                                     #(compare %2 %1)
+                                                     (map first months)))]
+                 (format "<a href=\"%s\">%s</a>"
+                         (apath/full-url-path (apath/archive (conj m "")))
+                         (let [sym (java.text.DateFormatSymbols/getInstance)]
+                           ;; Order: month year.  It is not clear if
+                           ;; there is a locale-specific way for
+                           ;; formatting as it is not date, only month
+                           ;; and year.
+                           (format "%s %s"
+                                   (get (.getMonths sym)
+                                         (dec (Integer/parseInt (nth m 1))))
+                                   (nth m 0)))))))
 
 (defn write-main-pages
-  [posts cats]
+  [posts cats months]
   (write-pages (slurp "./blog/templates/main-index.mustache")
                posts
                []
                {:feed (apath/full-url-path (feed-apath []))
                 :categories (main-categories-html cats)
                 :archive-index (apath/full-url-path (apath/archive ["index.html"]))
-                :month-links (main-month-links posts)
+                :month-links (main-month-links months)
                 :count (count posts)
                 :last (:DATE (parse-post cats (first posts)))
-               } ; TODO: additional parameters like calendar, sidebar etc.
+                :contacts (format (:contacts cfg/*cfg*)
+                                  (:author cfg/*cfg*))
+                :calendar nil ; TODO
+                :articles nil ; TODO
+                :links (slurp "./blog/templates/main-links.mustache")     ; TODO
+               }
                ))
 
 
@@ -314,6 +331,6 @@
             (write-feed [] posts)
             (write-months-parts m)
             (write-cats *cats*)
-            (write-main-pages plist *cats*)
+            (write-main-pages plist *cats* m)
             (ls-posts (take (:page-size cfg/*cfg*) posts))))))))
 
