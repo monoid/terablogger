@@ -22,7 +22,9 @@
    :permalink true
    ;; Input format
    :format "html" ; the only supported
-   :html-auto-break true})
+   :html-auto-break true
+   :html-base-url true
+   :html-base-url-str "%base_url%"})
 
 
 (def ^:dynamic *cfg*
