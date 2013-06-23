@@ -188,6 +188,68 @@
        (println (format " - %s" (:DATE p)))))))
 
 
+(defn write-pages
+  [template posts apath params]
+  (let [url (apath/full-url-path apath)]
+    (dorun
+     (for [[pposts ptab pfname] (paginate posts url)
+           ;; File path
+           :let [papath (conj apath pfname)]]
+       (apath/spit* papath
+                    (render template
+                            (assoc params
+                              :cfg cfg/*cfg*
+                              :body (string/join "" (map get-cached-post-part pposts))
+                              :tab ptab
+                              :feed (apath/full-url-path (feed-apath apath)))))))))
+
+(defn main-categories-html
+  [cats]
+  (string/join "<br>\n"
+               (for [cat cats]
+                 (format "<a href='%s'>%s</a>&nbsp;%d"
+                         (:url cat)
+                         (:name cat)
+                         (count (:files cat))))))
+
+(defn main-month-links
+  [months]
+  (string/join "<br>\n"
+               (for [m (take (:page-size cfg/*cfg*) (sort
+                                                     #(compare %2 %1)
+                                                     (map first months)))]
+                 (format "<a href=\"%s\">%s</a>"
+                         (apath/full-url-path (apath/archive (conj m "")))
+                         (let [sym (java.text.DateFormatSymbols/getInstance)]
+                           ;; Order: month year.  It is not clear if
+                           ;; there is a locale-specific way for
+                           ;; formatting as it is not date, only month
+                           ;; and year.
+                           (format "%s %s"
+                                   (get (.getMonths sym)
+                                         (dec (Integer/parseInt (nth m 1))))
+                                   (nth m 0)))))))
+
+(defn write-main-pages
+  [posts cats months]
+  (write-pages (slurp "./blog/templates/main-index.mustache")
+               posts
+               []
+               {:feed (apath/full-url-path (feed-apath []))
+                :categories (main-categories-html cats)
+                :archive-index (apath/full-url-path (apath/archive ["index.html"]))
+                :month-links (main-month-links months)
+                :count (count posts)
+                :last (:DATE (parse-post cats (first posts)))
+                :contacts (format (:contacts cfg/*cfg*)
+                                  (:author cfg/*cfg*))
+                :calendar nil ; TODO
+                :articles nil ; TODO
+                :links (slurp "./blog/templates/main-links.mustache")     ; TODO
+               }
+               ))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; Atom Feed
@@ -227,21 +289,6 @@
      :files files
      :set (set files)}))
 
-(defn write-pages
-  [template posts apath params]
-  (let [url (apath/full-url-path apath)]
-    (dorun
-     (for [[pposts ptab pfname] (paginate posts url)
-           ;; File path
-           :let [papath (conj apath pfname)]]
-       (apath/spit* papath
-                    (render template
-                            (assoc params
-                              :cfg cfg/*cfg*
-                              :body (string/join "" (map get-cached-post-part pposts))
-                              :tab ptab
-                              :feed (apath/url-path (feed-apath apath)))))))))
-
 (defn write-cat
   [cat]
   (let [{id :id
@@ -253,8 +300,11 @@
                  posts
                  cat-apath
                  {:cat cat})
-    (write-feed cat-apath
-                (map *posts* (take (:page-size cfg/*cfg*) posts)))))
+    (cfg/with-config (assoc cfg/*cfg*
+                       :title (format "%s : %s"
+                                      name (:title cfg/*cfg*)))
+      (write-feed cat-apath
+                  (map *posts* (take (:page-size cfg/*cfg*) posts))))))
 
 (defn write-cats
   [cats]
@@ -281,5 +331,6 @@
             (write-feed [] posts)
             (write-months-parts m)
             (write-cats *cats*)
+            (write-main-pages plist *cats* m)
             (ls-posts (take (:page-size cfg/*cfg*) posts))))))))
 

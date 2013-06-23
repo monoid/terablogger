@@ -18,6 +18,7 @@
    :title "Example blog"
    :description "Long blog description."
    :author "George W. Bush Jr."
+   :contacts "<a href=\"http://ammywhitehouse.gov\">%s</a>"
    :permalink true
    ;; Input format
    :format "html" ; the only supported
