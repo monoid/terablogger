@@ -140,18 +140,42 @@
   [post-id]
   (slurp (apath/blog-path (apath/cache (post-apath post-id)))))
 
-(defn write-months-parts
+(defn month-text
+  [m]
+  (let [sym (java.text.DateFormatSymbols/getInstance)]
+    ;; Order: month year.  It is not clear if
+    ;; there is a locale-specific way for
+    ;; formatting as it is not date, only month
+    ;; and year.
+    (format "%s %s"
+            (get (.getMonths sym)
+                 (dec (Integer/parseInt (nth m 1))))
+            (nth m 0))))
+
+(defn write-month
+  [[month-id posts]]
+  (let [sorted-posts (sort #(compare %2 %1) posts)
+        p (apath/full-url-path (apath/archive month-id))
+        pages (paginate sorted-posts p)]
+    ;; Paginate
+    (dorun
+     (for [[pposts ptab pfname] pages
+           :let [apath (apath/archive (conj month-id pfname))]]
+       ;; Write each page
+       (apath/spit* apath
+                    (render (slurp "./blog/templates/month-archive.mustache")
+                            {:body (string/join "" (map get-cached-post-part pposts))
+                             :tab ptab
+                             :cfg cfg/*cfg*
+                             :feed (apath/full-url-path (feed-apath []))
+                             :month (month-text month-id)
+                             }))))))
+
+(defn write-months
   [months]
   (dorun
-   (for [[month posts] months
-         :let [sorted-posts (sort #(compare %2 %1) posts)
-               p (apath/full-url-path (apath/archive month))
-               pages (paginate sorted-posts p)]
-         [pposts ptab pfname] pages
-         :let [apath (apath/cache (conj month pfname))]]
-     ;; Write each page
-     (apath/spit* apath
-                  (string/join "" (map get-cached-post-part pposts))))))
+   (for [month months]
+     (write-month month))))
 
 (defn write-post
     "Write post to cache and to archive."
@@ -220,15 +244,7 @@
                                                      (map first months)))]
                  (format "<a href=\"%s\">%s</a>"
                          (apath/full-url-path (apath/archive (conj m "")))
-                         (let [sym (java.text.DateFormatSymbols/getInstance)]
-                           ;; Order: month year.  It is not clear if
-                           ;; there is a locale-specific way for
-                           ;; formatting as it is not date, only month
-                           ;; and year.
-                           (format "%s %s"
-                                   (get (.getMonths sym)
-                                         (dec (Integer/parseInt (nth m 1))))
-                                   (nth m 0)))))))
+                         (month-text m)))))
 
 (defn write-main-pages
   [posts cats months]
@@ -329,7 +345,7 @@
                (write-post post)))
             ;; Main feed
             (write-feed [] posts)
-            (write-months-parts m)
+            (write-months m)
             (write-cats *cats*)
             (write-main-pages plist *cats* m)
             (ls-posts (take (:page-size cfg/*cfg*) posts))))))))
