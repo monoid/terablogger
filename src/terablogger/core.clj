@@ -49,7 +49,7 @@
   "Split sequence of posts into pages of :page-size length."
   [posts url-prefix]
   (let [numbers (iterate inc 1)
-        pages   (partition (:page-size cfg/*cfg*) posts)
+        pages   (partition-all (:page-size cfg/*cfg*) posts)
         npages  (count pages)]
     (map list pages
               (map #(paginated-bar % npages url-prefix) numbers)
