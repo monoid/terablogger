@@ -2,7 +2,8 @@
   (:require [clostache.parser :refer :all]
             [clojure.string :as string]
             [terablogger.cfg :as cfg]
-            [terablogger.apath :as apath])
+            [terablogger.apath :as apath]
+            [terablogger.format-html])
   (:gen-class))
 
 (def ^:dynamic *cats*
@@ -115,9 +116,11 @@
         lines (string/split-lines txt)
         [headers body] (split-with #(not (re-seq #"^-----$" %)) lines)
         categories (filter #((:set %) id) cats)
-        ]
+        fmt (ns-resolve (symbol (str "terablogger.format-" (:format cfg/*cfg*)))
+                        'fmt)]
     (assoc (parse-headers headers)
-      :BODY (string/join "\n" (butlast (rest (rest body))))
+      :BODY (fmt (string/join "\n" (butlast (rest (rest body))))
+                 cfg/*cfg*)
       :categories categories
       :categories2 (string/join ", " (map :name categories))
       :ID id
