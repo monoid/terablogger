@@ -116,8 +116,7 @@
         lines (string/split-lines txt)
         [headers body] (split-with #(not (re-seq #"^-----$" %)) lines)
         categories (filter #((:set %) id) cats)
-        fmt (ns-resolve (symbol (str "terablogger.format-" (:format cfg/*cfg*)))
-                        'fmt)]
+        fmt (symbol (format "terablogger.format-%s/fmt" (:format cfg/*cfg*)))]
     (assoc (parse-headers headers)
       :BODY (fmt (string/join "\n" (butlast (rest (rest body))))
                  cfg/*cfg*)
