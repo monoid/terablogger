@@ -43,7 +43,8 @@
                 (= (inc idx) i) " rel='prev'" ; idx = i-1
                 (= (inc i) idx) " rel='next'" ; idx = i+1
                 :else "")
-               (str prefix "/" (paginated-filename idx))
+               (terablogger.format-html/html-escape
+                (str prefix "/" (paginated-filename idx)))
                idx)))))
 
 (defn paginate
