@@ -154,7 +154,7 @@
   (slurp (apath/blog-path (apath/cache (post-apath post-id)))))
 
 (defn month-text
-  [m]
+  [[y m]]
   (let [sym (java.text.DateFormatSymbols/getInstance)]
     ;; Order: month year.  It is not clear if
     ;; there is a locale-specific way for
@@ -162,8 +162,8 @@
     ;; and year.
     (format "%s %s"
             (get (.getMonths sym)
-                 (dec (Integer/parseInt (nth m 1))))
-            (nth m 0))))
+                 (dec (Integer/parseInt m)))
+            y)))
 
 (defn write-month
   [[month-id posts]]
