@@ -373,7 +373,7 @@
             posts (map (partial parse-post *cats*)
                        plist)]
         (binding [*posts* (into {} (map #(vector (:ID %) %) posts))]
-          (let [m (months (list-posts))]
+          (let [m (sort #(compare (nth %2 0) (nth %1 0)) (months (list-posts)))]
             (dorun
              (for [post posts]
                (write-post post)))
