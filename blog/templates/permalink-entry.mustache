@@ -5,10 +5,5 @@
 </div>
 <div class="posted">
 Author: {{entry.AUTHOR}}
-{{#entry.categories?}}
-| Categories:
-{{#entry.categories}}
-  <a href="{{url}}">{{name}}</a>
-{{/entry.categories}}
-{{/entry.categories?}}
+{{#entry.categories?}} | Categories: {{{categories3}}}{{/entry.categories?}}
 </div>

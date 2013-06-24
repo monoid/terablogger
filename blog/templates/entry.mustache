@@ -10,13 +10,7 @@
 <div class="posted">
 Author: {{entry.AUTHOR}} |
 {{#cfg.permalink}}
-<a class="link" title="Article's permanent link" href="{{entry.permalink}}">Permanent link</a>
-{{/cfg.permalink}}
-{{#entry.categories?}}
-| Categories:
-{{#entry.categories}}
-  <a href="{{url}}">{{name}}</a>
-{{/entry.categories}}
-{{/entry.categories?}}
+<a class="link" title="Article's permanent link" href="{{entry.permalink}}">Permanent link</a>{{/cfg.permalink}}
+{{#entry.categories?}}| Categories: {{{categories3}}}{{/entry.categories?}}
 </div>
 </div>
