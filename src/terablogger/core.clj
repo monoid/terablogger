@@ -347,8 +347,12 @@
                (write-post post)))
             ;; Main feed
             (write-feed [] posts)
+            ;; Month archive
             (write-months m)
+            ;; Category archive
             (write-cats *cats*)
+            ;; Main page
             (write-main-pages plist *cats* m)
+            ;; List recent posts
             (ls-posts (take (:page-size cfg/*cfg*) posts))))))))
 
