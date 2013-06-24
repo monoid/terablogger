@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="{{cfg.lang}}">
+<!-- HEAD -->
+<head>
+<title>{{&title}} &mdash; {{&cfg.title}}</title>
+<link rel="stylesheet" href="{{cfg.url}}/{{cfg.style}}" type="text/css" />
+<link rel="alternate" type="application/atom+xml" title="Atom Feed" href="{{feed}}" />
+</head>
+<!-- BODY -->
+<body>
+<div id="banner">
+<h1><a href="{{cfg.url}}" accesskey="1">{{&cfg.title}}</a></h1>
+<span class="description">{{&cfg.description}}</span>
+</div>
+
+<div id="container">
+<div class="blog">
+ <div id="menu" class="menu">
+   <a href="{{cfg.url}}">Main page</a><br />
+ </div>
+ <div class="blogbody">
+   <h3 class="title">{{&title}}</h3>
+ {{&body}}
+ </div>
+</div>
+</div>
+
+</body>
+</html>

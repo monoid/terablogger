@@ -71,7 +71,7 @@
 ;;; Posts
 ;;;
 
-(declare feed-apath)
+(declare feed-apath month-link month-apath)
 
 (defn parse-headers
   "Parse post's headers, returning a hash."
@@ -115,14 +115,25 @@
   (let [txt (slurp (apath/data-path id))
         lines (string/split-lines txt)
         [headers body] (split-with #(not (re-seq #"^-----$" %)) lines)
-        categories (filter #((:set %) id) cats)
+        categories (sort #(compare (:id %1) (:id %2))
+                         (filter #((:set %) id) cats))
+        month (month-apath id)
         fmt (symbol (format "terablogger.format-%s/fmt" (:format cfg/*cfg*)))]
     (assoc (parse-headers headers)
       :BODY (fmt (string/join "\n" (butlast (rest (rest body))))
                  cfg/*cfg*)
       :categories categories
       :categories2 (string/join ", " (map :name categories))
+      :categories3 (string/join ", "
+                                (map #(format "<a href=\"%s\">%s</a>"
+                                              (terablogger.format-html/html-escape
+                                               (:url %))
+                                              (terablogger.format-html/html-escape
+                                               (:name %)))
+                                     categories))
       :ID id
+      :month month
+      :month-link (month-link month)
       :ts (post-ts id)
       :permalink (apath/full-url-path (post-apath id)))))
 
@@ -234,19 +245,23 @@
   (string/join "<br>\n"
                (for [cat cats]
                  (format "<a href='%s'>%s</a>&nbsp;%d"
-                         (:url cat)
-                         (:name cat)
+                         (terablogger.format-html/html-escape (:url cat))
+                         (terablogger.format-html/html-escape (:name cat))
                          (count (:files cat))))))
+
+(defn month-link
+  [m]
+  (format "<a href=\"%s\">%s</a>"
+                         (terablogger.format-html/html-escape
+                          (apath/full-url-path (apath/archive (conj m ""))))
+                         (terablogger.format-html/html-escape
+                          (month-text m))))
 
 (defn main-month-links
   [months]
   (string/join "<br>\n"
-               (for [m (take (:page-size cfg/*cfg*) (sort
-                                                     #(compare %2 %1)
-                                                     (map first months)))]
-                 (format "<a href=\"%s\">%s</a>"
-                         (apath/full-url-path (apath/archive (conj m "")))
-                         (month-text m)))))
+               (for [m (take (:page-size cfg/*cfg*) (map first months))]
+                 (month-link m))))
 
 (defn write-main-pages
   [posts cats months]
@@ -290,6 +305,22 @@
                           }))
     feed-url))
 
+(defn archive-index
+  [posts cats months]
+  (render (slurp "./blog/templates/all-posts.mustache")
+          {:posts posts
+           :cats cats
+           :months (map (comp (partial hash-map :month) month-link first) months)
+           :cfg cfg/*cfg*}))
+
+(defn write-archive-index
+  [posts cats months]
+  (apath/spit* (apath/archive ["index.html"])
+         (render (slurp "./blog/templates/makepage.mustache")
+                 {:body (archive-index posts cats months)
+                  :feed (apath/full-url-path (feed-apath []))
+                  :cfg cfg/*cfg*})))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -305,6 +336,7 @@
      :url (apath/full-url-path (apath/archive [(str "cat_" id) ""]))
      :name name
      :files files
+     :count (count files)
      :set (set files)}))
 
 (defn write-cat
@@ -351,6 +383,8 @@
             (write-months m)
             ;; Category archive
             (write-cats *cats*)
+            ;; Archive index
+            (write-archive-index posts *cats* m)
             ;; Main page
             (write-main-pages plist *cats* m)
             ;; List recent posts
