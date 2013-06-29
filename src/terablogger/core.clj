@@ -1,5 +1,6 @@
 (ns terablogger.core
   (:require [clostache.parser :refer :all]
+            [clojure.java.io :as io]
             [clojure.string :as string]
             [terablogger.cfg :as cfg]
             [terablogger.apath :as apath]
@@ -67,12 +68,62 @@
 
 
 
+
+(declare feed-apath month-link month-apath)
+
+
+(defn fmt
+  [txt cfg]
+  ((resolve (symbol (format "terablogger.format-%s/fmt" (:format cfg))))
+   txt cfg))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Articles
+;;;
+
+(defn article-id
+  [filename]
+  (subs filename 0 (- (count filename) 4)))
+
+(defn parse-articles
+  ([]
+     (parse-articles (apath/list-articles)))
+  ([articles]
+     (for [a articles]
+       (with-open [rdr (io/reader (apath/blog-path (apath/articles [a])))]
+         (let [lines (line-seq rdr)
+               aid (article-id a)
+               title (first lines)
+               body (string/join "\n" (rest lines))]
+          {:id aid
+           :html [aid "index.html"]
+           :title title
+           :body (fmt body cfg/*cfg*)
+           })))))
+
+(defn write-article
+  [art]
+  (let [apath (apath/articles (:html art))]
+    (apath/spit* apath
+                 (render (slurp "./blog/templates/makepage.mustache")
+                         {:cfg cfg/*cfg*
+                          :body (:body art)
+                          :title (:title art)
+                          :feed (apath/full-url-path (feed-apath []))
+                          }))))
+
+(defn write-articles
+  [articles]
+  (dorun
+   (for [art articles]
+     (write-article art))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; Posts
 ;;;
-
-(declare feed-apath month-link month-apath)
 
 (defn parse-headers
   "Parse post's headers, returning a hash."
@@ -118,8 +169,7 @@
         [headers body] (split-with #(not (re-seq #"^-----$" %)) lines)
         categories (sort #(compare (:id %1) (:id %2))
                          (filter #((:set %) id) cats))
-        month (month-apath id)
-        fmt (symbol (format "terablogger.format-%s/fmt" (:format cfg/*cfg*)))]
+        month (month-apath id)]
     (assoc (parse-headers headers)
       :BODY (fmt (string/join "\n" (butlast (rest (rest body))))
                  cfg/*cfg*)
@@ -206,7 +256,7 @@
                            {:cfg cfg :entry entry})]
       ;; Cached part
       (apath/spit* capath content)
-      ;; Full article page
+      ;; Full post page
       (apath/spit* aapath (render (slurp "./blog/templates/permalink.mustache")
                                   {:body pcontent
                                    :cfg cfg/*cfg*
@@ -264,8 +314,18 @@
                (for [m (take (:page-size cfg/*cfg*) (map first months))]
                  (month-link m))))
 
+(defn articles-links
+  [articles]
+  (string/join "<br>\n"
+               (for [art articles]
+                 (format "<a href=\"%s\">%s</a>"
+                         (terablogger.format-html/html-escape
+                          (apath/full-url-path (apath/articles (:html art))))
+                         (terablogger.format-html/html-escape
+                          (:title art))))))
+
 (defn write-main-pages
-  [posts cats months]
+  [posts cats months articles]
   (write-pages (slurp "./blog/templates/main-index.mustache")
                posts
                []
@@ -278,8 +338,8 @@
                 :contacts (format (:contacts cfg/*cfg*)
                                   (:author cfg/*cfg*))
                 :calendar nil ; TODO
-                :articles nil ; TODO
-                :links (slurp "./blog/templates/main-links.mustache")     ; TODO
+                :articles (articles-links articles)
+                :links (slurp "./blog/templates/main-links.mustache")
                }
                ))
 
@@ -372,7 +432,8 @@
     (binding [*cats* (map parse-cat (list-cats))]
       (let [plist (list-posts)
             posts (map (partial parse-post *cats*)
-                       plist)]
+                       plist)
+            articles (parse-articles)]
         (binding [*posts* (into {} (map #(vector (:ID %) %) posts))]
           (let [m (sort #(compare (nth %2 0) (nth %1 0)) (months (list-posts)))]
             (dorun
@@ -386,8 +447,10 @@
             (write-cats *cats*)
             ;; Archive index
             (write-archive-index posts *cats* m)
+            ;; Articles
+            (write-articles articles)
             ;; Main page
-            (write-main-pages plist *cats* m)
+            (write-main-pages plist *cats* m articles)
             ;; List recent posts
             (ls-posts (take (:page-size cfg/*cfg*) posts))))))))
 

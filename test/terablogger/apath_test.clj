@@ -49,8 +49,14 @@
            (archive ["test.html"])))))
 
 (deftest cache-apath-test1
-  (testing "archive-path test"
+  (testing "cache-path test"
     (is (= ["parts" "test.html"]
            (with-config test-config
              (cache ["test.html"]))))))
+
+(deftest articles-apath-test1
+  (testing "articles-apath test"
+    (is (= ["articles" "test.html"]
+           (with-config test-config
+             (articles ["test.html"]))))))
 

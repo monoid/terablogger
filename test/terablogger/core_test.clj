@@ -49,3 +49,8 @@
   (testing "post-ts"
     (is (= "2012-10-12T22:51:57Z"
            (post-ts "2012-10-12T22_51_57.txt")))))
+
+(deftest article-id-test1
+  (testing "article-id"
+    (is (= "pred"
+           (article-id "pred.txt")))))

@@ -43,6 +43,11 @@ data dir has no nested folders."
   [apath]
   (into ["parts"] apath))
 
+(defn articles
+  "Construct apath within article dir."
+  [apath]
+  (into ["articles"] apath))
+
 (defn data-lister
   "List files in data dir that match regex."
   [regex cmp]
@@ -52,6 +57,13 @@ data dir has no nested folders."
             (filter (partial re-seq regex)
                     (map (memfn getName)
                          (file-seq (File. dir))))))))
+
+(defn list-articles
+  []
+  (let [dir (blog-path ["articles"])]
+    (sort (filter (partial re-seq #"\.txt$")
+                  (map (memfn getName)
+                       (file-seq (File. dir)))))))
 
 (defn spit*
   "Spit data into apath, ensuring its parents exists."
