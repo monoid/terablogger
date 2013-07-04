@@ -1,10 +1,11 @@
 (ns terablogger.core
-  (:require [clostache.parser :refer :all]
-            [clojure.java.io :as io]
+  (:require [clojure.java.io :as io]
             [clojure.string :as string]
             [terablogger.cfg :as cfg]
             [terablogger.apath :as apath]
             [terablogger.format-html])
+  (:use
+   [terablogger.templates :only (render tmpl)])
   (:gen-class))
 
 (def ^:dynamic *cats*
@@ -106,7 +107,7 @@
   [art]
   (let [apath (apath/articles (:html art))]
     (apath/spit* apath
-                 (render (slurp "./blog/templates/makepage.mustache")
+                 (render "makepage"
                          {:cfg cfg/*cfg*
                           :body (:body art)
                           :title (:title art)
@@ -227,7 +228,7 @@
            :let [apath (apath/archive (conj month-id pfname))]]
        ;; Write each page
        (apath/spit* apath
-                    (render (slurp "./blog/templates/month-archive.mustache")
+                    (render "month-archive"
                             {:body (string/join "" (map get-cached-post-part pposts))
                              :tab ptab
                              :cfg cfg/*cfg*
@@ -250,14 +251,14 @@
                      :categories? (boolean (seq (:categories post))))
           capath    (apath/cache (post-apath (:ID post)))
           aapath    (apath/archive (post-apath (:ID post)))
-          content  (render (slurp "./blog/templates/entry.mustache")
+          content  (render "entry"
                           {:cfg cfg :entry entry})
-          pcontent (render (slurp "./blog/templates/permalink-entry.mustache")
+          pcontent (render "permalink-entry"
                            {:cfg cfg :entry entry})]
       ;; Cached part
       (apath/spit* capath content)
       ;; Full post page
-      (apath/spit* aapath (render (slurp "./blog/templates/permalink.mustache")
+      (apath/spit* aapath (render "permalink"
                                   {:body pcontent
                                    :cfg cfg/*cfg*
                                    :title (:TITLE entry)
@@ -326,7 +327,7 @@
 
 (defn write-main-pages
   [posts cats months articles]
-  (write-pages (slurp "./blog/templates/main-index.mustache")
+  (write-pages "main-index"
                posts
                []
                {:feed (apath/full-url-path (feed-apath []))
@@ -339,7 +340,7 @@
                                   (:author cfg/*cfg*))
                 :calendar nil ; TODO
                 :articles (articles-links articles)
-                :links (slurp "./blog/templates/main-links.mustache")
+                :links (tmpl "main-links")
                }
                ))
 
@@ -358,7 +359,7 @@
   (let [apath (feed-apath apath)
         feed-url (apath/full-url-path apath)]
     (apath/spit* apath
-                 (render (slurp "./blog/templates/atom.mustache")
+                 (render "atom"
                          {:cfg cfg/*cfg*
                           :entries (take (:page-size cfg/*cfg*) posts)
                           :lastmodified (post-ts (:ID (first posts)))
@@ -368,7 +369,7 @@
 
 (defn archive-index
   [posts cats months]
-  (render (slurp "./blog/templates/all-posts.mustache")
+  (render "all-posts"
           {:posts posts
            :cats cats
            :months (map (comp (partial hash-map :month) month-link first) months)
@@ -377,7 +378,7 @@
 (defn write-archive-index
   [posts cats months]
   (apath/spit* (apath/archive ["index.html"])
-         (render (slurp "./blog/templates/makepage.mustache")
+         (render "makepage"
                  {:body (archive-index posts cats months)
                   :feed (apath/full-url-path (feed-apath []))
                   :cfg cfg/*cfg*})))
@@ -407,7 +408,7 @@
          name :name
          posts :files} cat
          cat-apath ["archive" (format "cat_%s" id)]]
-    (write-pages (slurp "./blog/templates/category-archive.mustache")
+    (write-pages "category-archive"
                  posts
                  cat-apath
                  {:cat cat})
