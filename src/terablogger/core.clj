@@ -4,6 +4,7 @@
             [terablogger.cfg :as cfg]
             [terablogger.apath :as apath]
             [terablogger.format-html])
+  (:import java.util.Calendar)
   (:use
    [terablogger.templates :only (render tmpl)])
   (:gen-class))
@@ -69,7 +70,6 @@
 
 
 
-
 (declare feed-apath month-link month-apath)
 
 
@@ -122,83 +122,92 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;;
-;;; Posts
-;;;
+ ;;;
+ ;;; Posts
+ ;;;
 
-(defn parse-headers
-  "Parse post's headers, returning a hash."
-  [headers]
-  (into {}
-         (map #(let [[key val] (string/split % #": " 2)]
-                    [(keyword key) val])
-                 headers)))
+ (defn parse-headers
+   "Parse post's headers, returning a hash."
+   [headers]
+   (into {}
+          (map #(let [[key val] (string/split % #": " 2)]
+                     [(keyword key) val])
+                  headers)))
 
-(defn post-apath
-  ([id]
-     (conj (subvec (re-matches #"^(\d+)-(\d+)-(\d+)(T[0-9_]+).*" id)
-                   1)
-          "index.html")))
+ (defn post-apath
+   ([id]
+      (conj (subvec (re-matches #"^(\d+)-(\d+)-(\d+)(T[0-9_]+).*" id)
+                    1)
+           "index.html")))
 
-(defn post-ts
-  "Return timestamp for post id."
-  [id]
-  (if (nil? id)
-    nil
-    (let [[year month day hours minutes seconds] 
-          (map #(Integer/parseInt %)
-               (subvec (re-matches #"^(\d+)-(\d+)-(\d+)T([0-9]+)_([0-9]+)_([0-9]+).*" id)
-                       1))
-          ;; tz  (/ (.getOffset (java.util.TimeZone/getDefault)
-          ;;                    0 year month day 2 ; TODO TODO TODO
-          ;;                    (* 1000
-          ;;                       (+ seconds
-          ;;                          (* 60
-          ;;                             (+ minutes
-          ;;                                (* 60 hours))))))
-          ;;        1000 60)
-          ;; tzs (format "%+03d:%02d" (quot tz 60) (Math/abs (rem tz 60)))
-          tzs "Z"]
-      (format "%4d-%02d-%02dT%02d:%02d:%02d%s"
-              year month day hours minutes seconds tzs))))
+ (defn post-ts
+   "Return timestamp for post id."
+   [id]
+   (if (nil? id)
+     nil
+     (let [[year month day hours minutes seconds]
+           (map #(Integer/parseInt %)
+                (subvec (re-matches #"^(\d+)-(\d+)-(\d+)T([0-9]+)_([0-9]+)_([0-9]+).*" id)
+                        1))
+           ;; tz  (/ (.getOffset (java.util.TimeZone/getDefault)
+           ;;                    0 year month day 2 ; TODO TODO TODO
+           ;;                    (* 1000
+           ;;                       (+ seconds
+           ;;                          (* 60
+           ;;                             (+ minutes
+           ;;                                (* 60 hours))))))
+           ;;        1000 60)
+           ;; tzs (format "%+03d:%02d" (quot tz 60) (Math/abs (rem tz 60)))
+           tzs "Z"]
+       (format "%4d-%02d-%02dT%02d:%02d:%02d%s"
+               year month day hours minutes seconds tzs))))
 
-(defn parse-post 
-  "Parse blog post."
-  [cats id]
-  (let [txt (slurp (apath/data-path id))
-        lines (string/split-lines txt)
-        [headers body] (split-with #(not (re-seq #"^-----$" %)) lines)
-        categories (sort #(compare (:id %1) (:id %2))
-                         (filter #((:set %) id) cats))
-        month (month-apath id)]
-    (assoc (parse-headers headers)
-      :BODY (fmt (string/join "\n" (butlast (rest (rest body))))
-                 cfg/*cfg*)
-      :categories categories
-      :categories2 (string/join ", " (map :name categories))
-      :categories3 (string/join ", "
-                                (map #(format "<a href=\"%s\">%s</a>"
-                                              (terablogger.format-html/html-escape
-                                               (:url %))
-                                              (terablogger.format-html/html-escape
-                                               (:name %)))
-                                     categories))
-      :ID id
-      :month month
-      :month-link (month-link month)
-      :ts (post-ts id)
-      :permalink (apath/full-url-path (post-apath id)))))
+ (defn parse-post
+   "Parse blog post."
+   [cats id]
+   (let [txt (slurp (apath/data-path id))
+         lines (string/split-lines txt)
+         [headers body] (split-with #(not (re-seq #"^-----$" %)) lines)
+         categories (sort #(compare (:id %1) (:id %2))
+                          (filter #((:set %) id) cats))
+         month (month-apath id)]
+     (assoc (parse-headers headers)
+       :BODY (fmt (string/join "\n" (butlast (rest (rest body))))
+                  cfg/*cfg*)
+       :categories categories
+       :categories2 (string/join ", " (map :name categories))
+       :categories3 (string/join ", "
+                                 (map #(format "<a href=\"%s\">%s</a>"
+                                               (terablogger.format-html/html-escape
+                                                (:url %))
+                                               (terablogger.format-html/html-escape
+                                                (:name %)))
+                                      categories))
+       :ID id
+       :month month
+       :month-link (month-link month)
+       :ts (post-ts id)
+       :permalink (apath/full-url-path (post-apath id)))))
 
-(defn month-apath
-  "Post's month path from id."
-  [id]
-  (subvec (re-matches #"^(\d+)-(\d+).*" id)
-          1))
+ (defn month-apath
+   "Post's month path from id."
+   [id]
+   (subvec (re-matches #"^(\d+)-(\d+).*" id)
+           1))
 
-(defn months
-  "Posts grouped by month-path."
-  [posts]
-  (group-by month-apath posts))
+ (defn day-apath
+   "Post's month path from id."
+   [id]
+   (subvec (re-matches #"^(\d+)-(\d+)-(\d+).*" id)
+           1))
+
+ (defn days
+   "Group post by day."
+   [posts]
+   (group-by day-apath posts))
+
+ (defn fmap [f m]
+   (into {} (for [[k v] m] [k (f v)])))
 
 (defn get-cached-post-part
   "Load part from cache."
@@ -217,24 +226,91 @@
                  (dec (Integer/parseInt m)))
             y)))
 
+ (defn cal-header [cal sym]
+   (let [week-start (.getFirstDayOfWeek cal)
+         weekdays (.getShortWeekdays sym)
+         week-len 7] ; Is it always so?
+     (format
+      "<tr>%s</tr>"
+      (string/join ""
+                   (for [i (range week-len)]
+                     (format "<th class=\"calendarday\">%s</th>"
+                             (get weekdays (inc (mod (+ i week-start -1)
+                                                     week-len)))))))))
+
+ (defn cal-body [month days-list posts-grouped cal]
+   (let [week-start (.getFirstDayOfWeek cal)
+         fstday (.get cal Calendar/DAY_OF_WEEK)
+         week-len 7  ; Is it always so?
+         weeks (partition
+                week-len
+                week-len
+                (repeat week-len "")
+                (concat
+                 (repeat (mod (+ week-start fstday) ; Monday has index
+                              week-len)
+                         "")
+                 days-list))]
+     (string/join "\n"
+                  (for [week weeks]
+                    (format "<tr>%s</tr>"
+                            (string/join
+                             ""
+                             (for [d week]
+                               (if-let [posts (get posts-grouped (conj month d))]
+                                 (format "<td class=\"calendar\"><a href=\"%s#%s\">%s</a></td>"
+                                         ;; TODO: month archive is paginated!!!
+                                         (apath/full-url-path (apath/archive (conj month "index.html")))
+                                         (first posts)
+                                         d)
+                                 (if (= "" d)
+                                   "<td></td>"
+                                   (format "<td class=\"calendar\">%s</td>" d))))))))))
+
+ (defn month-cal [month posts]
+   (let [[year mon] month
+         ;; Grouped and sorted within each group
+         posts-grouped (fmap sort (days posts))
+         cal (Calendar/getInstance)  ; TODO: we cannot work with arabic
+                                     ; or chinese
+         sym (java.text.DateFormatSymbols/getInstance)]
+     ;; Setup cal
+     (.clear cal)
+     (.set cal Calendar/YEAR (Integer/parseInt year))
+     (.set cal Calendar/MONTH (dec (Integer/parseInt mon)))
+     (.set cal Calendar/DAY_OF_MONTH 1)
+
+     (let [days-list (map (partial format "%02d")
+                          (range 1 (.getActualMaximum cal
+                                                      Calendar/DAY_OF_MONTH)))
+           week-start (.getFirstDayOfWeek cal)]
+       (format
+        "<table summary=\"Calendar with links to days with entries\"><caption>%s</caption>\n%s\n%s</table>"
+        (month-text month)
+        (cal-header cal sym)
+        (cal-body month days-list posts-grouped cal)))))
+
+ (defn months
+   "Posts grouped by month-path."
+   [posts]
+   (into {}
+         (for [[month-id posts] (group-by month-apath posts)]
+           [month-id {:posts posts
+                      :cal (month-cal month-id posts)}])))
+
 (defn write-month
-  [[month-id posts]]
-  (let [sorted-posts (sort #(compare %2 %1) posts)
-        p (apath/full-url-path (apath/archive month-id))
-        pages (paginate sorted-posts p)]
-    ;; Paginate
-    (dorun
-     (for [[pposts ptab pfname] pages
-           :let [apath (apath/archive (conj month-id pfname))]]
-       ;; Write each page
-       (apath/spit* apath
-                    (render "month-archive"
-                            {:body (string/join "" (map get-cached-post-part pposts))
-                             :tab ptab
-                             :cfg cfg/*cfg*
-                             :feed (apath/full-url-path (feed-apath []))
-                             :month (month-text month-id)
-                             }))))))
+  [[month-id info]]
+  (let [posts (:posts info)
+        sorted-posts (sort #(compare %2 %1) posts)
+        apath (apath/archive (conj month-id "index.html"))]
+    (apath/spit* apath
+                 (render "month-archive"
+                         {:body (string/join "" (map get-cached-post-part sorted-posts))
+                          :cfg cfg/*cfg*
+                          :feed (apath/full-url-path (feed-apath []))
+                          :month (month-text month-id)
+                          :calendar (:cal info)
+                          }))))
 
 (defn write-months
   [months]
@@ -304,10 +380,10 @@
 (defn month-link
   [m]
   (format "<a href=\"%s\">%s</a>"
-                         (terablogger.format-html/html-escape
-                          (apath/full-url-path (apath/archive (conj m ""))))
-                         (terablogger.format-html/html-escape
-                          (month-text m))))
+          (terablogger.format-html/html-escape
+           (apath/full-url-path (apath/archive (conj m ""))))
+          (terablogger.format-html/html-escape
+           (month-text m))))
 
 (defn main-month-links
   [months]
@@ -326,7 +402,7 @@
                           (:title art))))))
 
 (defn write-main-pages
-  [posts cats months articles]
+  [posts cats months articles cal]
   (write-pages "main-index"
                posts
                []
@@ -338,7 +414,7 @@
                 :last (:DATE (parse-post cats (first posts)))
                 :contacts (format (:contacts cfg/*cfg*)
                                   (:author cfg/*cfg*))
-                :calendar nil ; TODO
+                :calendar cal
                 :articles (articles-links articles)
                 :links (tmpl "main-links")
                }
@@ -434,9 +510,10 @@
       (let [plist (list-posts)
             posts (map (partial parse-post *cats*)
                        plist)
-            articles (parse-articles)]
+            articles (parse-articles)
+            months1 (months (list-posts))]
         (binding [*posts* (into {} (map #(vector (:ID %) %) posts))]
-          (let [m (sort #(compare (nth %2 0) (nth %1 0)) (months (list-posts)))]
+          (let [m (sort #(compare (nth %2 0) (nth %1 0)) months1)]
             (dorun
              (for [post posts]
                (write-post post)))
@@ -451,7 +528,6 @@
             ;; Articles
             (write-articles articles)
             ;; Main page
-            (write-main-pages plist *cats* m articles)
+            (write-main-pages plist *cats* m articles (:cal (nth (first m) 1)))
             ;; List recent posts
             (ls-posts (take (:page-size cfg/*cfg*) posts))))))))
-

@@ -19,6 +19,11 @@
     (is (= ["2006" "04"]
            (month-apath "2006-04-07T12_04_59.txt")))))
 
+(deftest day-apath-test
+  (testing "day-apath test."
+    (is (= ["2006" "04" "07"]
+           (day-apath "2006-04-07T12_04_59.txt")))))
+
 (deftest paginated-bar-test1
   (testing "short paginating bar"
     (is (= "[1]" (paginated-bar 1 1 "/blog/parts")))))
