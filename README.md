@@ -1,10 +1,10 @@
 # terablogger
 
-FIXME: description
+Static blog engine inspired by nanoblogger.
 
 ## Installation
 
-Download from http://example.com/FIXME.
+Download from https://github.com/monoid/terablogger/.
 
 ## Usage
 
@@ -24,12 +24,8 @@ FIXME: listing of options this app accepts.
 
 ...
 
-### Any Other Sections
-### That You Think
-### Might be Useful
-
 ## License
 
-Copyright © 2013 FIXME
+Copyright © 2013 Ivan Boldyrev
 
-Distributed under the Eclipse Public License, the same as Clojure.
+Distributed under the GNU General Public License.
