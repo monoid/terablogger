@@ -31,7 +31,7 @@
   "Path for file in data dir.  Note that it accepts just filename, as 
 data dir has no nested folders."
   [filename]
-  (string/join  File/separator (list cfg/*blog-dir* "data" filename)))
+  (string/join File/separator (list cfg/*blog-dir* "data" filename)))
 
 (defn archive
   "Construct apath within archive."
@@ -53,17 +53,22 @@ data dir has no nested folders."
   [regex cmp]
   (fn []
     (let [dir (blog-path ["data"])]
-      (sort cmp
-            (filter (partial re-seq regex)
-                    (map (memfn getName)
-                         (file-seq (File. dir))))))))
+      (->> dir
+           (File.)
+           (file-seq)
+           (map (memfn getName))
+           (filter (partial re-seq regex))
+           (sort cmp)))))
 
 (defn list-articles
   []
   (let [dir (blog-path ["articles"])]
-    (sort (filter (partial re-seq #"\.txt$")
-                  (map (memfn getName)
-                       (file-seq (File. dir)))))))
+    (->> dir
+        (File.)
+        (file-seq)
+        (map (memfn getName))
+        (filter (partial re-seq #"\.txt$"))
+        (sort))))
 
 (defn spit*
   "Spit data into apath, ensuring its parents exists."

@@ -2,11 +2,11 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
             [terablogger.cfg :as cfg]
-            [terablogger.apath :as apath]
-            [terablogger.format-html])
+            [terablogger.apath :as apath])
   (:import java.util.Calendar)
   (:use
-   [terablogger.templates :only (render tmpl)])
+   [terablogger.templates :only (render tmpl)]
+   [terablogger.format-html :only [html-escape]])
   (:gen-class))
 
 (def ^:dynamic *cats*
@@ -46,8 +46,10 @@
                 (= (inc idx) i) " rel='prev'" ; idx = i-1
                 (= (inc i) idx) " rel='next'" ; idx = i+1
                 :else "")
-               (terablogger.format-html/html-escape
-                (str prefix "/" (paginated-filename idx)))
+               (->> idx
+                    paginated-filename
+                    (str prefix "/")
+                    html-escape)
                idx)))))
 
 (defn paginate
@@ -93,10 +95,9 @@
   ([articles]
      (for [a articles]
        (with-open [rdr (io/reader (apath/blog-path (apath/articles [a])))]
-         (let [lines (line-seq rdr)
+         (let [[title & b] (line-seq rdr)
                aid (article-id a)
-               title (first lines)
-               body (string/join "\n" (rest lines))]
+               body (string/join "\n" b)]
           {:id aid
            :html [aid "index.html"]
            :title title
@@ -122,92 +123,90 @@
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
- ;;;
- ;;; Posts
- ;;;
+;;;
+;;; Posts
+;;;
 
- (defn parse-headers
-   "Parse post's headers, returning a hash."
-   [headers]
-   (into {}
-          (map #(let [[key val] (string/split % #": " 2)]
-                     [(keyword key) val])
-                  headers)))
+(defn parse-headers
+  "Parse post's headers, returning a hash."
+  [headers]
+  (into {}
+         (map #(let [[key val] (string/split % #": " 2)]
+                    [(keyword key) val])
+                 headers)))
 
- (defn post-apath
-   ([id]
-      (conj (subvec (re-matches #"^(\d+)-(\d+)-(\d+)(T[0-9_]+).*" id)
-                    1)
-           "index.html")))
+(defn post-apath
+  ([id]
+     (conj (subvec (re-matches #"^(\d+)-(\d+)-(\d+)(T[0-9_]+).*" id)
+                   1)
+          "index.html")))
 
- (defn post-ts
-   "Return timestamp for post id."
-   [id]
-   (if (nil? id)
-     nil
-     (let [[year month day hours minutes seconds]
-           (map #(Integer/parseInt %)
-                (subvec (re-matches #"^(\d+)-(\d+)-(\d+)T([0-9]+)_([0-9]+)_([0-9]+).*" id)
-                        1))
-           ;; tz  (/ (.getOffset (java.util.TimeZone/getDefault)
-           ;;                    0 year month day 2 ; TODO TODO TODO
-           ;;                    (* 1000
-           ;;                       (+ seconds
-           ;;                          (* 60
-           ;;                             (+ minutes
-           ;;                                (* 60 hours))))))
-           ;;        1000 60)
-           ;; tzs (format "%+03d:%02d" (quot tz 60) (Math/abs (rem tz 60)))
-           tzs "Z"]
-       (format "%4d-%02d-%02dT%02d:%02d:%02d%s"
-               year month day hours minutes seconds tzs))))
+(defn post-ts
+  "Return timestamp for post id."
+  [id]
+  (if (nil? id)
+    nil
+    (let [[year month day hours minutes seconds]
+          (map #(Integer/parseInt %)
+               (subvec (re-matches #"^(\d+)-(\d+)-(\d+)T([0-9]+)_([0-9]+)_([0-9]+).*" id)
+                       1))
+          ;; tz  (/ (.getOffset (java.util.TimeZone/getDefault)
+          ;;                    0 year month day 2 ; TODO TODO TODO
+          ;;                    (* 1000
+          ;;                       (+ seconds
+          ;;                          (* 60
+          ;;                             (+ minutes
+          ;;                                (* 60 hours))))))
+          ;;        1000 60)
+          ;; tzs (format "%+03d:%02d" (quot tz 60) (Math/abs (rem tz 60)))
+          tzs "Z"]
+      (format "%4d-%02d-%02dT%02d:%02d:%02d%s"
+              year month day hours minutes seconds tzs))))
 
- (defn parse-post
-   "Parse blog post."
-   [cats id]
-   (let [txt (slurp (apath/data-path id))
-         lines (string/split-lines txt)
-         [headers body] (split-with #(not (re-seq #"^-----$" %)) lines)
-         categories (sort #(compare (:id %1) (:id %2))
-                          (filter #((:set %) id) cats))
-         month (month-apath id)]
-     (assoc (parse-headers headers)
-       :BODY (fmt (string/join "\n" (butlast (rest (rest body))))
-                  cfg/*cfg*)
-       :categories categories
-       :categories2 (string/join ", " (map :name categories))
-       :categories3 (string/join ", "
-                                 (map #(format "<a href=\"%s\">%s</a>"
-                                               (terablogger.format-html/html-escape
-                                                (:url %))
-                                               (terablogger.format-html/html-escape
-                                                (:name %)))
-                                      categories))
-       :ID id
-       :month month
-       :month-link (month-link month)
-       :ts (post-ts id)
-       :permalink (apath/full-url-path (post-apath id)))))
+(defn parse-post
+  "Parse blog post."
+  [cats id]
+  (let [txt (slurp (apath/data-path id))
+        lines (string/split-lines txt)
+        [headers body] (split-with #(not (re-seq #"^-----$" %)) lines)
+        categories (sort #(compare (:id %1) (:id %2))
+                         (filter #((:set %) id) cats))
+        month (month-apath id)]
+    (assoc (parse-headers headers)
+      :BODY (fmt (string/join "\n" (butlast (rest (rest body))))
+                 cfg/*cfg*)
+      :categories categories
+      :categories2 (string/join ", " (map :name categories))
+      :categories3 (string/join ", "
+                                (map #(format "<a href=\"%s\">%s</a>"
+                                              (html-escape (:url %))
+                                              (html-escape (:name %)))
+                                     categories))
+      :ID id
+      :month month
+      :month-link (month-link month)
+      :ts (post-ts id)
+      :permalink (apath/full-url-path (post-apath id)))))
 
- (defn month-apath
-   "Post's month path from id."
-   [id]
-   (subvec (re-matches #"^(\d+)-(\d+).*" id)
-           1))
+(defn month-apath
+  "Post's month path from id."
+  [id]
+  (subvec (re-matches #"^(\d+)-(\d+).*" id)
+          1))
 
- (defn day-apath
-   "Post's month path from id."
-   [id]
-   (subvec (re-matches #"^(\d+)-(\d+)-(\d+).*" id)
-           1))
+(defn day-apath
+  "Post's month path from id."
+  [id]
+  (subvec (re-matches #"^(\d+)-(\d+)-(\d+).*" id)
+          1))
 
- (defn days
-   "Group post by day."
-   [posts]
-   (group-by day-apath posts))
+(defn days
+  "Group post by day."
+  [posts]
+  (group-by day-apath posts))
 
- (defn fmap [f m]
-   (into {} (for [[k v] m] [k (f v)])))
+(defn fmap [f m]
+  (into {} (for [[k v] m] [k (f v)])))
 
 (defn get-cached-post-part
   "Load part from cache."
@@ -275,10 +274,12 @@
                                      ; or chinese
          sym (java.text.DateFormatSymbols/getInstance)]
      ;; Setup cal
-     (.clear cal)
-     (.set cal Calendar/YEAR (Integer/parseInt year))
-     (.set cal Calendar/MONTH (dec (Integer/parseInt mon)))
-     (.set cal Calendar/DAY_OF_MONTH 1)
+
+     (doto cal
+        (.clear)
+        (.set Calendar/YEAR (Integer/parseInt year))
+        (.set Calendar/MONTH (dec (Integer/parseInt mon)))
+        (.set Calendar/DAY_OF_MONTH 1))
 
      (let [days-list (map (partial format "%02d")
                           (range 1 (.getActualMaximum cal
@@ -373,16 +374,16 @@
   (string/join "<br>\n"
                (for [cat cats]
                  (format "<a href='%s'>%s</a>&nbsp;%d"
-                         (terablogger.format-html/html-escape (:url cat))
-                         (terablogger.format-html/html-escape (:name cat))
+                         (html-escape (:url cat))
+                         (html-escape (:name cat))
                          (count (:files cat))))))
 
 (defn month-link
   [m]
   (format "<a href=\"%s\">%s</a>"
-          (terablogger.format-html/html-escape
+          (html-escape
            (apath/full-url-path (apath/archive (conj m ""))))
-          (terablogger.format-html/html-escape
+          (html-escape
            (month-text m))))
 
 (defn main-month-links
@@ -396,9 +397,9 @@
   (string/join "<br>\n"
                (for [art articles]
                  (format "<a href=\"%s\">%s</a>"
-                         (terablogger.format-html/html-escape
+                         (html-escape
                           (apath/full-url-path (apath/articles (:html art))))
-                         (terablogger.format-html/html-escape
+                         (html-escape
                           (:title art))))))
 
 (defn write-main-pages
