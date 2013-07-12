@@ -485,7 +485,7 @@
          name :name
          posts :files} cat
         posts (sort #(compare %2 %1) posts)
-        cat-apath ["archive" (format "cat_%s" id)]]
+        cat-apath (apath/archive [(format "cat_%s" id)])]
     (write-pages "category-archive"
                  posts
                  cat-apath
