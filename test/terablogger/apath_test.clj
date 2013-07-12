@@ -33,9 +33,9 @@
 
 (deftest blog-path-test2
   (testing "blog-path test"
-    (is (= (p "." "blog" "archive" "test.html")
+    (is (= (p "." "blog" "archives" "test.html")
            (with-config test-config
-             (blog-path ["archive" "test.html"]))))))
+             (blog-path ["archives" "test.html"]))))))
 
 (deftest data-path-test1
   (testing "data-path test"
@@ -45,7 +45,7 @@
 
 (deftest archive-apath-test1
   (testing "archive-apath test"
-    (is (= ["archive" "test.html"]
+    (is (= ["archives" "test.html"]
            (archive ["test.html"])))))
 
 (deftest cache-apath-test1

@@ -36,7 +36,7 @@ data dir has no nested folders."
 (defn archive
   "Construct apath within archive."
   [apath]
-  (into ["archive"] apath))
+  (into ["archives"] apath))
 
 (defn cache
   "Construct apath within a cache."
