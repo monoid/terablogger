@@ -186,7 +186,7 @@
       :month month
       :month-link (month-link month)
       :ts (post-ts id)
-      :permalink (apath/full-url-path (post-apath id)))))
+      :permalink (apath/full-url-path (apath/archive (post-apath id))))))
 
 (defn month-apath
   "Post's month path from id."
