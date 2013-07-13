@@ -276,7 +276,7 @@
  (defn month-cal [month posts]
    (let [[year mon] month
          ;; Grouped and sorted within each group
-         posts-grouped (fmap sort (days posts))
+         posts-grouped (fmap (partial sort #(compare %2 %1)) (days posts))
          cal (Calendar/getInstance)  ; TODO: we cannot work with arabic
                                      ; or chinese
          sym (java.text.DateFormatSymbols/getInstance)]
