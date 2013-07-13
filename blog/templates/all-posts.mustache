@@ -1,17 +1,15 @@
-<h3 class="title">Archives</h3>
-
 <b id="category">Browse by category</b>
-<div>{{#cats}}
+<div class="archives">{{#cats}}
   <a href="{{url}}">{{name}}</a> ({{count}})<br />{{/cats}}
 </div>
 
 <b id="date">Browse by date</b>
-<div>{{#months}}
+<div class="archives">{{#months}}
   {{{month}}}<br />{{/months}}
 </div>
 
 <b id="entry">Browse by entry</b>
-<div>{{#posts}}
+<div class="archives">{{#posts}}
   {{{month-link}}} &mdash; <a href="{{permalink}}">{{TITLE}}</a>
   &mdash; {{{categories3}}}<br />{{/posts}}
 </div>

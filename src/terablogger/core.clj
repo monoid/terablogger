@@ -111,6 +111,7 @@
                  (render "makepage"
                          {:cfg cfg/*cfg*
                           :body (:body art)
+                          :title? true
                           :title (:title art)
                           :feed (apath/full-url-path (feed-apath []))
                           }))))
@@ -458,6 +459,7 @@
          (render "makepage"
                  {:body (archive-index posts cats months)
                   :feed (apath/full-url-path (feed-apath []))
+                  :title? false
                   :cfg cfg/*cfg*})))
 
 

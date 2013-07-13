@@ -19,7 +19,9 @@
    <a href="{{cfg.url}}">Main page</a><br />
  </div>
  <div class="blogbody">
+   {{#title?}}
    <h3 class="title">{{&title}}</h3>
+   {{/title?}}
  {{&body}}
  </div>
 </div>
