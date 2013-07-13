@@ -1,0 +1,628 @@
+/**
+ *  This style is based on nanoblogger's nb_clean.css.
+ *  It is distributed under terms of GNU GPL.
+ */
+	body {
+		margin:0px 0px 20px 0px;
+		/*background:#F4F4FF;*/
+                background: #F8F9FE;
+		}
+	A 		{ color: #0033A0; text-decoration: underline; }
+	A:link		{ color: #0033A0; text-decoration: underline; }
+	A:visited	{ color: #003333; text-decoration: underline; }
+	A:active	{ color: green;  }
+	A:hover		{ color: green;  }
+
+	h1, h2, h3 {
+		font-weight:500;
+		margin: 0px;
+                margin-bottom: 5px;
+		padding: 0px;
+	}
+
+	blockquote {
+		background-color:#EEE;
+		padding-left: 2ex;
+		padding-right: 2ex;
+		border-left:5px solid #BBB;
+		}
+
+	pre {
+		background:#EEE;
+		padding: 2mm;
+		border:1px solid #999;
+		}
+
+	#banner {
+                text-align: center;
+		font-family:georgia, verdana, arial, sans-serif;
+		color:#333;
+		font-size:100%;
+		font-weight:normal;
+  		padding:15px;
+                /*border-top:4px double #666;*/
+		border-bottom:1px solid #A0C0FF;
+		}
+        #banner h1 { 
+                font-size: 150%;
+                width: 260px;
+                min-height: 100px;
+                padding-top: 0.6em;
+                padding-left: 90px;
+                padding-right: 150px;
+                /* background-image: url(../../heading.jpg); */
+                background-repeat: no-repeat;
+                margin-left: auto;
+                margin-right: auto;
+                text-align: center;
+                text-shadow: 0px 2px 5px #AAA;
+        }
+	#banner a,
+        #banner a:link,
+        #banner a:visited,
+        #banner a:active,
+        #banner a:hover {
+		font-family: georgia, verdana, arial, sans-serif;
+		font-size: xx-large;
+		color: #333;
+		text-decoration: none;
+		}
+
+	.description {
+		font-family:georgia, times new roman, serif;
+		color:#333;
+		font-size:small;
+  		text-transform:none;
+                text-align: center;
+		}
+
+	#content {
+		position:absolute;
+		margin-right:20px;
+		margin-left:225px;
+		margin-bottom:20px;
+		border:1px solid #F8F8FF;
+		/*width: 70%;*/
+		}
+
+	#container {
+		/*border:1px solid;*/
+		}
+
+	#links {
+		padding:15px;
+		border:1px solid #F8F8FF;
+		width:180px;
+		border-right: 1px solid #A0C0FF;
+		}
+
+	.blog {
+  		padding:15px;
+  		padding: 10px 15px;
+                min-width: 30ex;
+                max-width: 80ex;
+		}
+
+	.blogbody {
+		font-family: georgia, verdana, sans-serif;
+		/*font-family:verdana, arial, sans-serif;*/
+		color:#333;
+		/*font-size:small;*/
+		font-weight:normal;
+  		line-height:140%;
+		}
+
+	.blogbody a,
+	.blogbody a:link,
+	.blogbody a:visited,
+	.blogbody a:active,
+	.blogbody a:hover {
+		font-weight: normal;
+		text-decoration: underline;
+	}
+
+	.title	{
+		font-family: georgia, times new roman, serif;
+		font-size: large;
+		color: #333;
+		margin-bottom:15px #F8F8FF;
+		border-bottom:1px solid #000;
+                padding-bottom:5px #F8F8FF;
+		margin-bottom:0.3ex #F8F8FF;
+		}
+
+	#menu {
+		font-family:georgia, times new roman, serif;
+		font-size: small;
+  		margin-bottom:15px;
+		text-align:center;
+                padding-top: 2ex;
+		}
+
+	.date	{
+		font-family: palatino, georgia, times new roman, serif;
+                font-size: 85%;
+		color: #666;
+		font-size: normal;
+		font-weight:bold;
+                text-align: right;
+                margin-top:0.2em;
+                margin-bottom:0.2em;
+		}
+
+	.posted	{
+		font-family:verdana, arial, sans-serif;
+		font-size: x-small;
+		color: #000000;
+                clear: both;
+		/*margin-bottom:25px;*/
+		}
+
+	.calendar {
+		font-family:verdana, arial, sans-serif;
+		color:#666;
+		font-size:x-small;
+		font-weight:normal;
+  		line-height:150%;
+  		padding:2px;
+		text-align:left;
+		}
+
+	.calendar a,
+	.calendar a:link,
+	.calendar a:active,
+	.calendar a:hover {
+		font-weight: bold;
+		text-decoration: underline;
+	}
+
+	.calendarhead {
+		font-family:georgia, times new roman, serif;
+		color:#666600;
+		font-size:small;
+		font-weight:bold;
+  		padding:2px;
+		letter-spacing: .3em;
+  		text-transform:uppercase;
+		text-align:center;
+		border-bottom: 1px solid #999;
+		}
+
+	.calendarday {
+		font-weight:bold;
+		text-align:center;
+	}
+
+	.side {
+		font-family:verdana, arial, sans-serif;
+		color:#333;
+		font-size:x-small;
+		font-weight:normal;
+  		line-height:150%;
+  		padding:2px;
+		}
+
+	.sidetitle {
+		font-family:georgia, times new roman, serif;
+		color:#666600;
+		font-size:small;
+		font-weight:normal;
+  		padding:2px;
+  		margin-top:20px;
+		letter-spacing: .3em;
+  		text-transform:uppercase;
+		}
+
+	.syndicate {
+		font-family:verdana, arial, sans-serif;
+		font-size:xx-small;
+  		line-height:150%;
+  		padding:2px;
+  		margin-top:15px;
+ 		}
+
+	.powered {
+		font-family:palatino, georgia, times new roman, serif;
+		color:#666;
+		font-size:x-small;
+		line-height:150%;
+		text-transform:uppercase; 
+		padding:2px;
+		margin-top:60px;
+		letter-spacing: .2em;
+		}
+
+	.comments-body {
+		font-family:georgia, verdana, arial, sans-serif;
+		color:#666;
+		font-size:small;
+		font-weight:normal;
+  		line-height:180%;
+ 		padding-bottom:10px;
+  		padding-top:10px;
+ 		border-bottom:1px dotted #A0C0FF;
+		}
+
+	.comments-post {
+		font-family:verdana, arial, sans-serif;
+		color:#666;
+		font-size:x-small;
+		font-weight:normal;
+		}
+
+	.trackback-url {
+		font-family:georgia, verdana, arial, sans-serif;
+		color:#666;
+		font-size:small;
+		font-weight:normal;
+  		line-height:150%;
+ 		padding:5px;
+ 		border:1px dotted #A0C0FF;
+		}
+
+	.trackback-body {
+		font-family:georgia, verdana, arial, sans-serif;
+		color:#666;
+		font-size:small;
+		font-weight:normal;
+  		line-height:180%;
+ 		padding-bottom:10px;
+  		padding-top:10px;
+ 		border-bottom:1px dotted #A0C0FF;
+		}
+
+	.trackback-post {
+		font-family:verdana, arial, sans-serif;
+		color:#666;
+		font-size:x-small;
+		font-weight:normal;
+		}
+
+	.comments-head	{
+		font-family:georgia, verdana, arial, sans-serif;
+		font-size:small;
+		color: #666;
+		border-bottom:1px solid #999;
+		margin-top:20px;
+		font-weight:bold;
+		}
+
+	#banner-commentspop {
+		font-family:georgia, verdana, arial, sans-serif;
+		color:#FFF;
+		font-size:large;
+		font-weight:bold;
+		border-left:1px solid #F8F8FF;
+		border-right:1px solid #F8F8FF;
+		border-top:1px solid #F8F8FF;
+  		padding-left:15px;
+  		padding-right:15px;
+  		padding-top:5px;
+  		padding-bottom:5px;
+		}
+
+	.intro {
+		font-family:georgia, verdana, arial, sans-serif;
+		border-bottom:1px solid #999;
+		border-left:1px solid #999;
+		color:#333;
+		font-size:small;
+		font-weight:normal;
+  		line-height:180%;
+		padding-top:0px;
+		padding-left:10px;
+		padding-right:10px;
+		padding-bottom:10px;
+		margin-bottom:45px;
+		}
+
+	.intro a,
+	.intro a:link,
+	.intro a:visited,
+	.intro a:active,
+	.intro a:hover {
+		font-weight: normal;
+		text-decoration: underline;
+		color:#333;
+		}
+	
+
+.item { 
+  background: #FAFCFF;
+  background-color: #F8F8FF;
+  border-color: #8080FF;
+  border-width: 1px;
+  border-style: solid;
+  padding: 1ex;
+  margin-bottom: 1.5ex;
+  -moz-border-radius: 3px;
+}
+
+.rec-side {
+  font-family:verdana, arial, sans-serif;
+  color:#333;
+  font-size:x-small;
+  font-weight:normal;
+  line-height:150%;
+  padding:2px;
+}
+
+.rec-side a {
+  display: block;
+  margin-top: 0.5ex;
+  margin-bottom: 0.5em;
+  padding: 0.4ex;
+  border-bottom: 1px solid #DDD;
+}
+
+.rec-side br { 
+  display: none;
+}
+
+.copyright { 
+  padding: 1ex;
+  text-align: center;
+  font-size: small;
+  border-width: 1px 0px 0px 0px;
+  border-color: #999;
+  border-style: solid;
+}
+
+.copyrightnotice {
+  padding: 1ex;
+  text-align: center;
+  font-size: small;
+}
+
+#links .copyright { 
+  border-width: 1px 1px 1px 0px;
+}
+
+/* Thumbnail image declarations */
+.right-thumbn, .right-thumb {
+  float: right;
+  width: 125px;
+  text-align: center;
+  margin-left: 10px;
+  margin-right: 0px;
+  padding-right: 0px;
+}
+.right-thumbn * { margin-top: 0px; margin-bottom: 0.3em; padding-right: 0px; }
+.right-thumb *  { margin-top: 0px; margin-bottom: 0.3em; padding-right: 0px; }
+
+/* Large image */
+
+.imgcenter, .imglarge {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 2.5em;
+}
+div.imglarge img {
+  padding: 0.8ex;
+  padding-left: 0px;
+  border-style: solid;
+  border-color: #8080FF;
+  border-width: 1px 1px 1px 0px;
+  background: #F8F8FF;
+}
+div.imglarge * {
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Banner atop of page */
+img.banner { 
+  border-width: 2px;
+  border-color: #F8F8FF;
+}
+
+a:hover img.banner { border-color: #999999; }
+
+/* Help cursors */
+abbr[title]:hover { cursor:help; }
+a[title]:hover { cursor:help; }
+
+/* Picture's caption */
+.caption {
+ margin-top: 0.8em;
+ font-size: xx-small;
+ text-align: center;
+ font-family: verdana, arial, sans-serif;
+}
+.imglarge p {
+    margin-bottom: 0.4em;
+}
+.imglarge .caption{
+   margin-top: 0.4em;
+   margin-bottom: 1em;
+   width: 400px; 
+   font-size: small;
+}
+
+/* Icons for internal links */
+/* .blogbody a[href^="/"] {
+    padding-right: 12px;
+    background: url(../images/arrow-normal-int.gif) no-repeat right top;
+}
+
+.blogbody a[href^="/"]:visited {
+    padding-right: 12px;
+    background: url(../images/arrow-visited-int.gif) no-repeat right top;
+}
+.blogbody a[href^="/"]:active, .blogbody a[href^="/"]:hover {
+    padding-right: 12px;
+    background: url(../images/arrow-active-int.gif) no-repeat right top;
+}*/
+/* Icons for external links */
+/* * a[href^="http:"] {
+    padding-right: 12px;
+    background: url(../images/arrow-normal.gif) no-repeat right top;
+}
+
+* a[href^="http:"]:visited {
+    padding-right: 12px;
+    background: url(../images/arrow-visited.gif) no-repeat right top;
+}
+* a[href^="http:"]:active, * a[href^="http:"]:hover {
+    padding-right: 12px;
+    background: url(../images/arrow-active.gif) no-repeat right top;
+}*/
+
+/* No icon at link from thumbnail image */
+/*.right-thumbn a[href^="/"],
+ .right-thumbn a[href^="/"]:visited,
+ .right-thumbn a[href^="/"]:hover,
+ .right-thumbn a[href^="/"]:active {
+  padding-right: 0px;
+  background-image: none;
+}*/
+
+/* Important notifications */
+.attention {
+  text-align: center;
+  font-size: large;
+  border-color: #FFA0A0;
+  border-width: 3px;
+  border-style: solid;
+  padding: 0.3ex 0.5ex 0.5ex 0.5ex;
+  width: 66%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Turn off category link to current category page */
+body#bodycat1 #linkcat1html a:visited,
+body#bodycat2 #linkcat2html a:visited,
+body#bodycat3 #linkcat3html a:visited,
+body#bodycat4 #linkcat4html a:visited,
+body#bodycat5 #linkcat5html a:visited,
+body#bodycat6 #linkcat6html a:visited,
+body#bodycat7 #linkcat7html a:visited,
+body#bodycat8 #linkcat8html a:visited,
+body#body2006-04 #link2006-04 a:visited,
+body#body2006-05 #link2006-05 a:visited,
+body#body2006-06 #link2006-06 a:visited,
+body#body2006-07 #link2006-07 a:visited,
+body#body2006-08 #link2006-08 a:visited,
+body#body2006-09 #link2006-09 a:visited,
+body#body2006-10 #link2006-10 a:visited,
+body#body2006-11 #link2006-11 a:visited,
+body#body2006-12 #link2006-12 a:visited
+ { color: blue; text-decoration: none; }
+
+/* Floating ruler */
+div.ruler {
+  float: right;
+  border-width: 0 1px 1px 1px;
+  border-style: none solid dashed solid;
+  border-color: black;
+  margin-left: 0pt;
+  margin-right: 0pt;
+  padding: 0pt;
+  text-align: center;
+}
+div.ruler + p {
+  margin-right: 5em;
+}
+
+/* Table of sunsets and sundowns */
+table.sunschedule {
+  border: black 1pt solid;
+  margin-left: auto;
+  margin-right: auto;
+  border-collapse: collapse;
+  background: white;
+}
+table.sunschedule caption {
+  caption-side: top;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 140%;
+}
+table.sunschedule col.time {
+  width: 10ex;
+}
+
+table.sunschedule td {
+  border-style: solid;
+  border-width: 1px;
+  border-color: black;
+  text-align: center;
+  margin: 0pt;
+}
+table.sunschedule thead th {
+  border-style: solid;
+  border-width: 1px;
+  border-color: black;
+  padding: 0.3ex;
+}
+
+table.sunschedule tbody th {
+  border-style: solid;
+  border-width: 1px;
+  border-color: black;
+  font-weight: normal;
+  width: 16ex;
+  text-align: left;
+  padding: 0.3ex;
+}
+
+table.sunschedule tr.springsol {
+  background: #F0F0FF;
+}
+table.sunschedule tr.springsol th {
+  font-weight: bold;
+}
+table.sunschedule tr.summersol {
+  background: #80FF80;
+}
+table.sunschedule tr.summersol th {
+  font-weight: bold;
+}
+table.sunschedule tr.autumnsol {
+  background: #FFFF00;
+}
+table.sunschedule tr.autumnsol th {
+  font-weight: bold;
+}
+table.sunschedule tr.wintersol {
+  background: #A0AAFF;
+}
+table.sunschedule tr.wintersol th {
+  font-weight: bold;
+}
+
+/* Text that is added later. */
+.update {
+  font-weight: bold;
+}
+
+/* Note */
+.note {
+  font-size: 80%;
+}
+/* Warning */
+.warning { 
+  border: 2px red solid;
+  width: 80%;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1ex;
+  text-align: center;
+}
+
+blockquote .author {
+  font-size: x-small;
+  float: right;
+  width: 60%;
+  margin-top: 0;
+}
+
+.auth {
+  font-variant: small-caps;
+}
+a:active { position: relative; top: 1px; }
+
+.archives {margin-bottom: 1em;}
