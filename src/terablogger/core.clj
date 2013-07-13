@@ -2,7 +2,9 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as string]
             [terablogger.cfg :as cfg]
-            [terablogger.apath :as apath])
+            [terablogger.apath :as apath]
+            [terablogger.format-markdown]
+            [terablogger.format-textile])
   (:import java.util.Calendar)
   (:use
    [terablogger.templates :only (render tmpl)]
@@ -22,7 +24,7 @@
 
 (def list-posts
   "Function that return list of category posts."
-  (apath/data-lister #"\.txt$" #(compare %2 %1)))
+  (apath/data-lister #"\.(txt|html|markdown|textile)$" #(compare %2 %1)))
 
 (defn paginated-filename [idx]
   (if (= 1 idx)
@@ -74,10 +76,18 @@
 
 (declare feed-apath month-link month-apath)
 
+(defn file-format
+  "File format based on file extension."
+  [p]
+  (let [ext (second (re-matches #".*\.([^.]*)$" p))]
+    (if (= ext "txt")
+      "html"
+      ext)))
 
 (defn fmt
-  [txt cfg]
-  ((resolve (symbol (format "terablogger.format-%s/fmt" (:format cfg))))
+  "Format txt of type `type`."
+  [txt type cfg]
+  ((resolve (symbol (format "terablogger.format-%s/fmt" type)))
    txt cfg))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -101,7 +111,7 @@
           {:id aid
            :html [aid "index.html"]
            :title title
-           :body (fmt body cfg/*cfg*)
+           :body (fmt body (file-format a) cfg/*cfg*)
            })))))
 
 (defn write-article
@@ -179,6 +189,7 @@
         month (month-apath id)]
     (assoc (parse-headers headers)
       :BODY (fmt (string/join "\n" (butlast (rest (rest body))))
+                 (file-format id)
                  cfg/*cfg*)
       :categories categories
       :categories2 (string/join ", " (map :name categories))

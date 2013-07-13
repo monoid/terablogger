@@ -21,10 +21,17 @@
    :contacts "<a href=\"http://ammywhitehouse.gov\">%s</a>"
    :permalink true
    ;; Input format
-   :format "html" ; the only supported
+   ;; 1. HTML
+   :format "html"
    :html-auto-break true
    :html-base-url true
-   :html-base-url-str "%base_url%"})
+   :html-base-url-str "%base_url%"
+   ;; ;; 2. Markdown
+   ;; :format "markdown"
+   ;; :markdown-params {}
+   ;; ;; 3. Textile
+   ;; :format "textile"
+   })
 
 
 (def ^:dynamic *cfg*
