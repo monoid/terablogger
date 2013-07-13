@@ -142,6 +142,10 @@
                    1)
           "index.html")))
 
+(defn post-htmlid [id]
+  "Id that is used for HTML article id."
+  (str "e" id))
+
 (defn post-ts
   "Return timestamp for post id."
   [id]
@@ -186,7 +190,7 @@
       :ID id
       ;; HTML id starts with letter; we add 'e' for compatibility
       ;; with nanoblogger.
-      :hid (str "e" id)
+      :hid (post-htmlid id)
       :month month
       :month-link (month-link month)
       :ts (post-ts id)
@@ -263,7 +267,7 @@
                                (if-let [posts (get posts-grouped (conj month d))]
                                  (format "<td class=\"calendar\"><a href=\"%s#%s\">%s</a></td>"
                                          (apath/full-url-path (apath/archive (conj month "index.html")))
-                                         (str "e" (first posts))
+                                         (post-htmlid (first posts))
                                          d)
                                  (if (= "" d)
                                    "<td></td>"
