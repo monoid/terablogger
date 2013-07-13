@@ -286,7 +286,7 @@
                                                       Calendar/DAY_OF_MONTH)))
            week-start (.getFirstDayOfWeek cal)]
        (format
-        "<table summary=\"Calendar with links to days with entries\"><caption>%s</caption>\n%s\n%s</table>"
+        "<table><caption>%s</caption>\n%s\n%s</table>"
         (month-text month)
         (cal-header cal sym)
         (cal-body month days-list posts-grouped cal)))))
