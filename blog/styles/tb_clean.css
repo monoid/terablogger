@@ -131,7 +131,7 @@
 		margin-bottom:0.3ex #F8F8FF;
 		}
 
-	#menu {
+	#menu, #bottommenu {
 		font-family:georgia, times new roman, serif;
 		font-size: small;
   		margin-bottom:15px;
