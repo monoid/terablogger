@@ -184,6 +184,9 @@
                                               (html-escape (:name %)))
                                      categories))
       :ID id
+      ;; HTML id starts with letter; we add 'e' for compatibility
+      ;; with nanoblogger.
+      :hid (str "e" id)
       :month month
       :month-link (month-link month)
       :ts (post-ts id)
@@ -259,9 +262,8 @@
                              (for [d week]
                                (if-let [posts (get posts-grouped (conj month d))]
                                  (format "<td class=\"calendar\"><a href=\"%s#%s\">%s</a></td>"
-                                         ;; TODO: month archive is paginated!!!
                                          (apath/full-url-path (apath/archive (conj month "index.html")))
-                                         (first posts)
+                                         (str "e" (first posts))
                                          d)
                                  (if (= "" d)
                                    "<td></td>"
