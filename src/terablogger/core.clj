@@ -4,11 +4,11 @@
             [terablogger.cfg :as cfg]
             [terablogger.apath :as apath]
             [terablogger.format-markdown]
-            [terablogger.format-textile])
-  (:import java.util.Calendar)
-  (:use
-   [terablogger.templates :only (render tmpl)]
-   [terablogger.format-html :only [html-escape]])
+            [terablogger.format-textile]
+            [terablogger.templates :refer [render tmpl]]
+            [terablogger.format-html :refer [html-escape]])
+  (:import java.util.Calendar
+           java.text.DateFormatSymbols)
   (:gen-class))
 
 (def ^:dynamic *cats*
