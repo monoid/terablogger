@@ -72,6 +72,12 @@
           (subs msg 0 (- n 3))) "...")
     msg))
 
+(defn sort*
+  "Sort in reverse order."
+  ([seq]
+     (sort #(compare %2 %1) seq))
+  ([cmp seq]
+     (sort #(cmp %2 %1) seq)))
 
 (defn link [apath text]
   (format "<a href=\"%s\">%s</a>"
