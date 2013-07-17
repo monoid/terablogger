@@ -61,9 +61,6 @@ data dir has no nested folders."
             (filter (partial re-seq regex))
             (sort cmp)))))
 
-(def list-articles
-  (data-lister ["articles"] #"\.txt$" compare))
-
 (defn spit*
   "Spit data into apath, ensuring its parents exists."
   [apath data]

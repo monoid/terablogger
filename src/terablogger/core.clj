@@ -26,6 +26,10 @@
   "Function that return list of category posts."
   (apath/data-lister #"\.(txt|html|markdown|textile)$" #(compare %2 %1)))
 
+(def list-articles
+  "Function that return list of articles."
+  (apath/data-lister ["articles"] #"\.txt$" compare))
+
 (defn paginated-filename [idx]
   (if (= 1 idx)
     "index.html"
