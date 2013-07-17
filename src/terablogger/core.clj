@@ -73,6 +73,11 @@
     msg))
 
 
+(defn link [apath text]
+  (format "<a href=\"%s\">%s</a>"
+          (html-escape (apath/full-url-path apath))
+          (html-escape text)))
+
 
 (declare feed-apath month-link month-apath)
 
@@ -194,9 +199,8 @@
       :categories categories
       :categories2 (string/join ", " (map :name categories))
       :categories3 (string/join ", "
-                                (map #(format "<a href=\"%s\">%s</a>"
-                                              (html-escape (:url %))
-                                              (html-escape (:name %)))
+                                (map #(link (:apath %)
+                                            (:name %))
                                      categories))
       :ID id
       ;; HTML id starts with letter; we add 'e' for compatibility
@@ -287,7 +291,7 @@
  (defn month-cal [month posts]
    (let [[year mon] month
          ;; Grouped and sorted within each group
-         posts-grouped (fmap (partial sort #(compare %2 %1)) (days posts))
+         posts-grouped (fmap sort* (days posts))
          cal (Calendar/getInstance)  ; TODO: we cannot work with arabic
                                      ; or chinese
          sym (java.text.DateFormatSymbols/getInstance)]
@@ -320,7 +324,7 @@
 (defn write-month
   [[month-id info]]
   (let [posts (:posts info)
-        sorted-posts (sort #(compare %2 %1) posts)
+        sorted-posts (sort* posts)
         apath (apath/archive (conj month-id "index.html"))]
     (apath/spit* apath
                  (render "month-archive"
@@ -389,36 +393,34 @@
 
 (defn main-categories-html
   [cats]
-  (string/join "<br>\n"
-               (for [cat cats]
-                 (format "<a href='%s'>%s</a>&nbsp;%d"
-                         (html-escape (:url cat))
-                         (html-escape (:name cat))
-                         (count (:files cat))))))
+  (->> cats
+       (map #(format "%s&nbsp;%d"
+                         (link (:apath %) (:name %))
+                         (count (:files %))))
+       (string/join "<br>\n")))
 
 (defn month-link
   [m]
-  (format "<a href=\"%s\">%s</a>"
-          (html-escape
-           (apath/full-url-path (apath/archive (conj m ""))))
-          (html-escape
-           (month-text m))))
+  (link (apath/archive (conj m "")) (month-text m)))
+
 
 (defn main-month-links
   [months]
-  (string/join "<br>\n"
-               (for [m (take (:page-size cfg/*cfg*) (map first months))]
-                 (month-link m))))
+  (->> months
+       (map (comp month-link first))
+       (take (:page-size cfg/*cfg*))
+       (string/join "<br>\n")))
+
+(defn article-link [art]
+  (link (apath/articles (:html art))
+        (:title art)))
 
 (defn articles-links
+  "HTML string of <br>-separated article links."
   [articles]
-  (string/join "<br>\n"
-               (for [art articles]
-                 (format "<a href=\"%s\">%s</a>"
-                         (html-escape
-                          (apath/full-url-path (apath/articles (:html art))))
-                         (html-escape
-                          (:title art))))))
+  (->> articles
+       (map article-link)
+       (string/join "<br>\n")))
 
 (defn write-main-pages
   [posts cats months articles cal]
@@ -453,13 +455,12 @@
   [apath posts]
   (let [apath (feed-apath apath)
         feed-url (apath/full-url-path apath)]
-    (apath/spit* apath
-                 (render "atom"
-                         {:cfg cfg/*cfg*
-                          :entries (take (:page-size cfg/*cfg*) posts)
-                          :lastmodified (post-ts (:ID (first posts)))
-                          :self-url feed-url 
-                          }))
+    (->> {:cfg cfg/*cfg*
+          :entries (take (:page-size cfg/*cfg*) posts)
+          :lastmodified (post-ts (:ID (first posts)))
+          :self-url feed-url}
+         (render "atom")
+         (apath/spit* apath))
     feed-url))
 
 (defn archive-index
@@ -491,7 +492,7 @@
         [name & files] (string/split-lines txt)
         [_ id] (re-matches #"cat_([0-9]+).db$" file)]
     {:id id
-     :url (apath/full-url-path (apath/archive [(str "cat_" id) ""]))
+     :apath (apath/archive [(str "cat_" id) ""])
      :name name
      :files files
      :count (count files)
@@ -500,10 +501,9 @@
 (defn write-cat
   [cat]
   (let [{id :id
-         url :url
          name :name
          posts :files} cat
-        posts (sort #(compare %2 %1) posts)
+        posts (sort* posts)
         cat-apath (apath/archive [(format "cat_%s" id)])]
     (write-pages "category-archive"
                  posts
