@@ -24,11 +24,11 @@
 
 (def list-posts
   "Function that return list of category posts."
-  (apath/data-lister #"\.(txt|html|markdown|textile)$" #(compare %2 %1)))
+  (apath/data-lister (:input-regex cfg/*cfg*) #(compare %2 %1)))
 
 (def list-articles
   "Function that return list of articles."
-  (apath/data-lister ["articles"] #"\.txt$" compare))
+  (apath/data-lister ["articles"] (:input-regex cfg/*cfg*) compare))
 
 (defn paginated-filename [idx]
   (if (= 1 idx)
@@ -114,7 +114,7 @@
 
 (defn article-id
   [filename]
-  (subs filename 0 (- (count filename) 4)))
+  (second (re-matches #"([^.]*)(\.[^.]+)?" filename)))
 
 (defn parse-articles
   ([]

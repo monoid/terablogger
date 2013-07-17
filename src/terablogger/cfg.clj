@@ -20,6 +20,7 @@
    :author "George W. Bush Jr."
    :contacts "<a href=\"http://ammywhitehouse.gov\">%s</a>"
    :permalink true
+   :input-regex #"\.(txt|html|markdown|textile)$"
    ;; Input format
    ;; 1. HTML
    :format "html"
