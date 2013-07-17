@@ -50,25 +50,19 @@ data dir has no nested folders."
 
 (defn data-lister
   "List files in data dir that match regex."
-  [regex cmp]
-  (fn []
-    (let [dir (blog-path ["data"])]
-      (->> dir
-           (File.)
-           (file-seq)
-           (map (memfn getName))
-           (filter (partial re-seq regex))
-           (sort cmp)))))
+  ([regex cmp]
+     (data-lister ["data"] regex cmp))
+  ([apath regex cmp]
+     (fn []
+       (->> (blog-path apath)
+            (File.)
+            (file-seq)
+            (map (memfn getName))
+            (filter (partial re-seq regex))
+            (sort cmp)))))
 
-(defn list-articles
-  []
-  (let [dir (blog-path ["articles"])]
-    (->> dir
-        (File.)
-        (file-seq)
-        (map (memfn getName))
-        (filter (partial re-seq #"\.txt$"))
-        (sort))))
+(def list-articles
+  (data-lister ["articles"] #"\.txt$" compare))
 
 (defn spit*
   "Spit data into apath, ensuring its parents exists."
