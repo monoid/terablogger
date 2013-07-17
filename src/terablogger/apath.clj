@@ -56,7 +56,8 @@ data dir has no nested folders."
      (fn []
        (->> (blog-path apath)
             (File.)
-            (file-seq)
+            (.listFiles )
+            (filter (memfn isFile))
             (map (memfn getName))
             (filter (partial re-seq regex))
             (sort cmp)))))
