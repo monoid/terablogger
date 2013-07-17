@@ -83,7 +83,7 @@
   ([cmp seq]
      (sort #(cmp %2 %1) seq)))
 
-(defn link [apath text]
+(defn href [apath text]
   (format "<a href=\"%s\">%s</a>"
           (html-escape (apath/full-url-path apath))
           (html-escape text)))
@@ -116,7 +116,7 @@
 
 (defn parse-articles
   ([]
-     (parse-articles (apath/list-articles)))
+     (parse-articles (list-articles)))
   ([articles]
      (for [a articles]
        (with-open [rdr (io/reader (apath/blog-path (apath/articles [a])))]
@@ -209,7 +209,7 @@
       :categories categories
       :categories2 (string/join ", " (map :name categories))
       :categories3 (string/join ", "
-                                (map #(link (:apath %)
+                                (map #(href (:apath %)
                                             (:name %))
                                      categories))
       :ID id
@@ -405,13 +405,13 @@
   [cats]
   (->> cats
        (map #(format "%s&nbsp;%d"
-                         (link (:apath %) (:name %))
+                         (href (:apath %) (:name %))
                          (count (:files %))))
        (string/join "<br>\n")))
 
 (defn month-link
   [m]
-  (link (apath/archive (conj m "")) (month-text m)))
+  (href (apath/archive (conj m "")) (month-text m)))
 
 
 (defn main-month-links
@@ -422,7 +422,7 @@
        (string/join "<br>\n")))
 
 (defn article-link [art]
-  (link (apath/articles (:html art))
+  (href (apath/articles (:html art))
         (:title art)))
 
 (defn articles-links
