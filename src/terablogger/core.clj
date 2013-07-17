@@ -72,8 +72,10 @@
   "If msg's length exeeds n, truncate it, appending '...'. "
   [msg n]
   (if (> (count msg) n)
-    (str (string/trimr ; Trim for better text appearance
-          (subs msg 0 (- n 3))) "...")
+    (-> msg
+        (subs 0 (- n 3))
+        (string/trimr)  ; Trim whitespaces at end for better appearance
+        (str "..."))
     msg))
 
 (defn sort*
@@ -305,8 +307,8 @@
          cal (Calendar/getInstance)  ; TODO: we cannot work with arabic
                                      ; or chinese
          sym (java.text.DateFormatSymbols/getInstance)]
-     ;; Setup cal
 
+     ;; Setup cal
      (doto cal
         (.clear)
         (.set Calendar/YEAR (Integer/parseInt year))
