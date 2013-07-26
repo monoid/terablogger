@@ -7,7 +7,7 @@
   ;; TODO: lookup in serveral places, perhaps
   (let [path (apath/blog-path ["templates"
                     (str name ".mustache")])]
-    (slurp path)))
+    (slurp path :encoding (:encoding cfg/*cfg*))))
 
 (defn render [name params]
   (parser/render (tmpl name)

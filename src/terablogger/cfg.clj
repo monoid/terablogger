@@ -21,6 +21,7 @@
    :contacts "<a href=\"http://ammywhitehouse.gov\">%s</a>"
    :permalink true
    :input-regex #"\.(txt|html|markdown|textile)$"
+   :encoding "utf-8"
    ;; Input format
    ;; 1. HTML
    :format "html"
@@ -44,7 +45,7 @@
   (:blog-dir *cfg*))
 
 (defmacro with-config
-  "Bind *cfg*, *blog-dir* and *data-dir* to values in cfg and execute body."
+  "Bind *cfg*, *blog-dir* and to values in cfg and execute body."
   [cfg & body]
   `(binding [*cfg* ~cfg]
      (binding [*blog-dir* (:blog-dir *cfg*)]

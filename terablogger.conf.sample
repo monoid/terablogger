@@ -10,6 +10,7 @@
  :author "George W. Bush Jr."
  :contacts "<a href=\"http://ammywhitehouse.gov\">%s</a>"
  :permalink true
+ :encoding "utf-8"
  ;; Input formats
  ;; 1. HTML
  :format "html"

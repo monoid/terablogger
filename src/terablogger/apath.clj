@@ -67,5 +67,5 @@ data dir has no nested folders."
   [apath data]
   (let [path (blog-path apath)]
    (io/make-parents path)
-   (spit path data)))
+   (spit path data :encoding (:encoding cfg/*cfg*))))
 
