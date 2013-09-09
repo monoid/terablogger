@@ -4,6 +4,28 @@
             [terablogger.core :refer :all]
             [clojure.string :as string]))
 
+;; Test data: categories
+(def categories
+  (map (partial apply parse-cat)
+       ;; Categories are in reversed order to check ordering in article-cats.
+       [["cat_2.db"
+         "Test cat 2
+2013-08-23T120000.txt"]
+        ["cat_1.db"
+         "Test cat 1
+2013-08-23T120000.txt
+2013-08-30T120000.txt"]]))
+
+(deftest post-cats-test
+  (testing "post-cats test"
+    (is (= (list (nth categories 1))
+           (post-cats "2013-08-30T120000.txt" categories)))))
+
+(deftest post-cats-sort-test
+  (testing "post-cats ordering"
+    (is (= (reverse categories)
+           (post-cats "2013-08-23T120000.txt" categories)))))
+
 (deftest post-apath-test1
   (testing "Basic post-path."
     (is (= ["2006" "04" "07" "T12_04_59" "index.html"]

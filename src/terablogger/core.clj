@@ -195,14 +195,20 @@
       (format "%4d-%02d-%02dT%02d:%02d:%02d%s"
               year month day hours minutes seconds tzs))))
 
+(defn post-cats
+  "Categories that article belongs to."
+  [id cats]
+  (sort #(compare (:id %1) (:id %2))  ; Order by category numerical id.
+        (filter #((:set %) id)   ; Check if article id is in set of posts.
+                cats)))
+
 (defn parse-post
   "Parse blog post."
   [cats id]
   (let [txt (slurp (apath/data-path id))
         lines (string/split-lines txt)
         [headers body] (split-with #(not (re-seq #"^-----$" %)) lines)
-        categories (sort #(compare (:id %1) (:id %2))
-                         (filter #((:set %) id) cats))
+        categories (post-cats id cats)
         month (month-apath id)]
     (assoc (parse-headers headers)
       :BODY (fmt (string/join "\n" (butlast (rest (rest body))))
