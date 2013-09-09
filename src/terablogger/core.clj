@@ -499,9 +499,8 @@
 ;;;
 (defn parse-cat
   "Parse category file."
-  [file]
-  (let [txt (slurp (apath/data-path file))
-        [name & files] (string/split-lines txt)
+  [file txt]
+  (let [[name & files] (string/split-lines txt)
         [_ id] (re-matches #"cat_([0-9]+).db$" file)]
     {:id id
      :apath (apath/archive [(str "cat_" id) ""])
@@ -509,6 +508,12 @@
      :files files
      :count (count files)
      :set (set files)}))
+
+(defn read-cat
+  "Load category data from file."
+  [file]
+  (let [txt (slurp (apath/data-path file))]
+    (parse-cat file txt)))
 
 (defn write-cat
   [cat]
@@ -539,7 +544,7 @@
   ;; work around dangerous default behaviour in Clojure
   (alter-var-root #'*read-eval* (constantly false))
   (cfg/with-config (cfg/load-config)
-    (binding [*cats* (map parse-cat (list-cats))]
+    (binding [*cats* (map read-cat (list-cats))]
       (let [plist (list-posts)
             posts (map (partial parse-post *cats*)
                        plist)

@@ -76,3 +76,17 @@
     (is (= "<a href=\"http://example-blog.com/blog/test?a=b&amp;u=v\">A&gt;B&gt;C</a>"
            (href ["test?a=b&u=v"]
                  "A>B>C")))))
+
+(deftest parse-cat-test
+  (testing "parse-cat basic"
+    (is (= {:id "10",
+            :apath ["archives" "cat_10" ""],
+            :name "Test",
+            :files '("2013-08-23T120000.txt" "2013-08-30T120000.txt"),
+            :count 2,
+            :set     #{"2013-08-30T120000.txt" "2013-08-23T120000.txt"}}
+           (parse-cat "cat_10.db"
+                      "Test
+2013-08-23T120000.txt
+2013-08-30T120000.txt
+")))))
