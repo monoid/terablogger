@@ -202,6 +202,22 @@
         (filter #((:set %) id)   ; Check if article id is in set of posts.
                 cats)))
 
+(defrecord Post
+  [TITLE
+   AUTHOR
+   DATE
+   DESC
+   BODY
+   categories
+   categories2
+   categories3
+   ID
+   hid
+   month
+   month-link
+   ts
+   permalink])
+
 (defn parse-post
   "Parse blog post."
   [cats id]
@@ -210,24 +226,25 @@
         [headers body] (split-with #(not (re-seq #"^-----$" %)) lines)
         categories (post-cats id cats)
         month (month-apath id)]
-    (assoc (parse-headers headers)
-      :BODY (fmt (string/join "\n" (butlast (rest (rest body))))
-                 (file-format id)
-                 cfg/*cfg*)
-      :categories categories
-      :categories2 (string/join ", " (map :name categories))
-      :categories3 (string/join ", "
-                                (map #(href (:apath %)
-                                            (:name %))
-                                     categories))
-      :ID id
-      ;; HTML id starts with letter; we add 'e' for compatibility
-      ;; with nanoblogger.
-      :hid (post-htmlid id)
-      :month month
-      :month-link (month-link month)
-      :ts (post-ts id)
-      :permalink (apath/full-url-path (apath/archive (post-apath id))))))
+    (map->Post
+     (assoc (parse-headers headers)
+       :BODY (fmt (string/join "\n" (butlast (rest (rest body))))
+                  (file-format id)
+                  cfg/*cfg*)
+       :categories categories
+       :categories2 (string/join ", " (map :name categories))
+       :categories3 (string/join ", "
+                                 (map #(href (:apath %)
+                                             (:name %))
+                                      categories))
+       :ID id
+       ;; HTML id starts with letter; we add 'e' for compatibility
+       ;; with nanoblogger.
+       :hid (post-htmlid id)
+       :month month
+       :month-link (month-link month)
+       :ts (post-ts id)
+       :permalink (apath/full-url-path (apath/archive (post-apath id)))))))
 
 (defn month-apath
   "Post's month path from id."
@@ -503,17 +520,27 @@
 ;;;
 ;;; Categories
 ;;;
+
+(defrecord Category
+    [id
+     apath
+     name
+     files
+     count
+     set])
+
 (defn parse-cat
   "Parse category file."
   [file txt]
   (let [[name & files] (string/split-lines txt)
         [_ id] (re-matches #"cat_([0-9]+).db$" file)]
-    {:id id
-     :apath (apath/archive [(str "cat_" id) ""])
-     :name name
-     :files files
-     :count (count files)
-     :set (set files)}))
+    (map->Category
+     {:id id
+      :apath (apath/archive [(str "cat_" id) ""])
+      :name name
+      :files files
+      :count (count files)
+      :set (set files)})))
 
 (defn read-cat
   "Load category data from file."
