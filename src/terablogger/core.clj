@@ -85,6 +85,14 @@
   ([cmp seq]
      (sort #(cmp %2 %1) seq)))
 
+(defn split*
+  "Split string with regexp.  If first argument is nil or empty string,
+return []."
+  [str-or-nil regex]
+  (if (seq str-or-nil)
+    (string/split str-or-nil regex)
+    []))
+
 (defn href [apath text]
   (format "<a href=\"%s\">%s</a>"
           (html-escape (apath/full-url-path apath))
