@@ -571,6 +571,50 @@
    (for [cat cats]
      (write-cat cat))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Operations
+;;
+
+(defn add-post
+  "Add post."
+  []
+  (throw (ex-info "Not implemented.")))
+
+(defn add-cat
+  "Add category."
+  []
+  (throw (ex-info "Not implemented.")))
+
+
+(defn del-post
+  "Delete post."
+  []
+  (throw (ex-info "Not implemented.")))
+
+(defn del-cat
+  "Delete category."
+  []
+  (throw (ex-info "Not implemented.")))
+
+
+(defn edit-post
+  "Edit post."
+  []
+  (throw (ex-info "Not implemented.")))
+
+(defn edit-cat
+  "Edit post."
+  []
+  (throw (ex-info "Not implemented.")))
+
+
+(defn move-post
+  "Move post to categories.
+Remove from old, add to new, regenerate everything."
+  []
+  (throw (ex-info "Not implemented.")))
+
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
