@@ -52,7 +52,8 @@
        ~@body)))
 
 (defn load-config
-  []
+  [params]
   ;; STUB implementation
+  ;; TODO: check params
   (into *cfg* (or (clojure.edn/read-string (slurp "terablogger.conf"))
                   {})))

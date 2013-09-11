@@ -1,6 +1,8 @@
 (ns terablogger.core
   (:require [clojure.java.io :as io]
+            [clojure.set :refer [intersection]]
             [clojure.string :as string]
+            [clojure.tools.cli :refer [cli]]
             [terablogger.cfg :as cfg]
             [terablogger.apath :as apath]
             [terablogger.format-markdown]
@@ -623,34 +625,119 @@ Remove from old, add to new, regenerate everything."
   []
   (throw (ex-info "Not implemented.")))
 
+(defn find-cat-by-id
+  "Resolve cat ID (as string) to category."
+  [cat-id]
+  (first (filter #(= cat-id (:id %))
+                 *cats*)))
+
+(defn options-cats
+  [options]
+  (map find-cat-by-id (split* (:cat options) #",")))
+
+(defn command-list [options]
+  (binding [*cats* (map read-cat (list-cats))]
+    (case (:list options)
+      ("current" "last" "new" nil)
+      (let [plist (list-posts)
+            posts (map (partial parse-post *cats*)
+                       plist)]
+        (ls-posts (take (:page-size cfg/*cfg*) posts)))
+
+      "all"
+      (let [plist (list-posts)
+            posts (map (partial parse-post *cats*)
+                       plist)]
+        (ls-posts posts))
+
+      "cat"
+      (let [cat (first (options-cats options))]
+        (when cat
+          (let [plist (sort* (:set cat))
+                posts (map (partial parse-post *cats*)
+                           plist)]
+            (ls-posts (take (:page-size cfg/*cfg*) posts)))))
+
+      ;; Default:
+      ;; TODO: throw an exception?
+      nil)))
+
+
+(def ^:const CLI-OPTIONS
+  [
+   ;; Operations
+
+   ;; Declareing --add as a boolean is kludge as tools.cli has no
+   ;; other means to provide option without value. --no-add is just useless...
+   ;; TODO: another option parsing library?
+   ["-a" "--add" "Add post (default) or category (with -c new)." :flag true]
+   ["-d" "--delete" "<ID,cat> Delete post or category (-d ID, -d cat)"]
+   ["-e" "--edit" "<ID,cat>Edit article or categori (-e ID, -e cat)."]
+   ["-m" "--move" "<ID> Move post to another categories."]
+   ["-u" "--update" "<all,current,main> Update blog (regenerate HTML)."]
+   ["-l" "--list" "<all,cat,current> List posts."]
+   ["-h" "--help" "Print help."]
+   ;; Category
+   ["-c" "--cat" "Category id, or comma-separted list, or 'new' for addition."]
+   ;; Parameters for post creation:
+   ["-n" "--author" "<text> Set entry's author."]
+   ["-D" "--desc"   "<text> Set entry's description."]
+   ["-t" "--title" "<text> Set entry's or category's title."]])
+
+
+(defn command-number
+  [params]
+  (count
+   (intersection (set (keys params))
+                 (set [:add :delete :edit :move :update :list]))))
+
 (defn -main
   "I don't do a whole lot ... yet."
   [& args]
   ;; work around dangerous default behaviour in Clojure
   (alter-var-root #'*read-eval* (constantly false))
-  (cfg/with-config (cfg/load-config)
-    (binding [*cats* (map read-cat (list-cats))]
-      (let [plist (list-posts)
-            posts (map (partial parse-post *cats*)
-                       plist)
-            articles (parse-articles)
-            months1 (months (list-posts))]
-        (binding [*posts* (into {} (map #(vector (:ID %) %) posts))]
-          (let [m (sort #(compare (nth %2 0) (nth %1 0)) months1)]
-            (dorun
-             (for [post posts]
-               (write-post post)))
-            ;; Main feed
-            (write-feed [] posts)
-            ;; Month archive
-            (write-months m)
-            ;; Category archive
-            (write-cats *cats*)
-            ;; Archive index
-            (write-archive-index posts *cats* m)
-            ;; Articles
-            (write-articles articles)
-            ;; Main page
-            (write-main-pages plist *cats* m articles (:cal (nth (first m) 1)))
-            ;; List recent posts
-            (ls-posts (take (:page-size cfg/*cfg*) posts))))))))
+
+  (let [[options ignored banner] (apply cli args CLI-OPTIONS)
+        has-cat (contains? options :cat)
+        cmd-num (command-number options)
+        is-command-help (or (> cmd-num 2) ; There's always :add
+                            (contains? options :help))
+        is-command-list (or (= cmd-num 1) ; There's always :add
+                            (contains? options :list))]
+    (cfg/with-config (cfg/load-config options)
+      (cond
+       is-command-help
+          (println banner)
+       is-command-list
+          (command-list options)
+       true
+          (println "Not implemented yet."))))
+
+  (comment
+    (cfg/with-config (cfg/load-config)
+      (binding [*cats* (map read-cat (list-cats))]
+        (let [
+              plist (list-posts)
+              posts (map (partial parse-post *cats*)
+                         plist)
+              articles (parse-articles)
+              months1 (months (list-posts))]
+          (binding [*posts* (into {} (map #(vector (:ID %) %) posts))]
+            (let [m (sort #(compare (nth %2 0) (nth %1 0)) months1)]
+              (dorun
+               (for [post posts]
+                 (write-post post)))
+              ;; Main feed
+              (write-feed [] posts)
+              ;; Month archive
+              (write-months m)
+              ;; Category archive
+              (write-cats *cats*)
+              ;; Archive index
+              (write-archive-index posts *cats* m)
+              ;; Articles
+              (write-articles articles)
+              ;; Main page
+              (write-main-pages plist *cats* m articles (:cal (nth (first m) 1)))
+              ;; List recent posts
+              (ls-posts (take (:page-size cfg/*cfg*) posts)))))))))

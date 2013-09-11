@@ -113,3 +113,9 @@
 2013-08-23T120000.txt
 2013-08-30T120000.txt
 ")))))
+
+(deftest find-cat-by-id-test
+  (testing "find-cat-by-id"
+    (is (= (first categories)
+           (binding [*cats* categories]
+                    (find-cat-by-id "2"))))))
