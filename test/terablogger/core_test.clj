@@ -119,3 +119,9 @@
     (is (= (first categories)
            (binding [*cats* categories]
                     (find-cat-by-id "2"))))))
+
+(deftest find-cat-by-id-num-test
+  (testing "find-cat-by-id numeric"
+    (is (= (first categories)
+           (binding [*cats* categories]
+                    (find-cat-by-id 2))))))

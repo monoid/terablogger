@@ -626,18 +626,22 @@ Remove from old, add to new, regenerate everything."
   (throw (ex-info "Not implemented.")))
 
 (defn find-cat-by-id
-  "Resolve cat ID (as string) to category."
+  "Resolve cat ID into Category."
   [cat-id]
-  (first (filter #(= cat-id (:id %))
+  (first (filter #(= (str cat-id) (:id %))
                  *cats*)))
 
 (defn options-cats
+  "Resolve comma-separated list of category IDs into seq of Category objects."
   [options]
   (map find-cat-by-id (split* (:cat options) #",")))
 
-(defn command-list [options]
+(defn command-list
+  "Handle --list <all,cat,current> command line option."
+  [options]
   (binding [*cats* (map read-cat (list-cats))]
     (case (:list options)
+      ;; We also accept "last" and "new".  Undocumented feature :)
       ("current" "last" "new" nil)
       (let [plist (list-posts)
             posts (map (partial parse-post *cats*)
