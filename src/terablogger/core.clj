@@ -9,8 +9,11 @@
             [terablogger.format-textile]
             [terablogger.templates :refer [render tmpl]]
             [terablogger.format-html :refer [html-escape]])
-  (:import java.util.Calendar
-           java.text.DateFormatSymbols)
+  (:import java.io.File
+           java.util.Calendar
+           java.text.DateFormat
+           java.text.DateFormatSymbols
+           java.text.SimpleDateFormat)
   (:gen-class))
 
 (def ^:dynamic *cats*
@@ -94,6 +97,19 @@ return []."
   (if (seq str-or-nil)
     (string/split str-or-nil regex)
     []))
+
+(defn ask-user
+  ([prompt]
+     (print (format "%s: " prompt))
+     (flush)
+     (read-line))
+  ([prompt default]
+     (print (format "%s [%s]: " prompt default))
+     (flush)
+     (let [resp (read-line)]
+       (if (string/blank? resp)
+         default
+         resp))))
 
 (defn href [apath text]
   (format "<a href=\"%s\">%s</a>"
@@ -386,6 +402,20 @@ return []."
    (for [month months]
      (write-month month))))
 
+(defn save-post
+  "Write post data."
+  [post]
+  (with-open [wrtr (io/writer (apath/data-path (:ID post)))]
+    ;; Header
+    (dorun
+     (for [field '(:TITLE :AUTHOR :DATE :DESC)]
+       (.write wrtr (format "%s: %s\n" field (field post)))))
+    ;; Body
+    (doto wrtr
+      (.write "-----\nBODY:\n")
+      (.write (:BODY post))
+      (.write "\n-----\n"))))
+
 (defn write-post
     "Write post to cache and to archive."
     [post]
@@ -535,6 +565,7 @@ return []."
     [id
      apath
      name
+     file
      files
      count
      set])
@@ -547,6 +578,7 @@ return []."
     (map->Category
      {:id id
       :apath (apath/archive [(str "cat_" id) ""])
+      :file file
       :name name
       :files files
       :count (count files)
@@ -557,6 +589,20 @@ return []."
   [file]
   (let [txt (slurp (apath/data-path file))]
     (parse-cat file txt)))
+
+(defn save-cat
+  "Save category data to text file."
+  [cat]
+  (with-open [wrtr (io/writer (apath/data-path (:file cat)))]
+    ;; First line: category title
+    (.write wrtr (:name cat))
+    (.write wrtr "\n")
+    ;; Rest of file is list of posts
+    (dorun
+     (for [fid (:files cat)]
+       (doto wrtr
+         (.write fid)
+         (.write "\n"))))))
 
 (defn write-cat
   [cat]
@@ -586,16 +632,78 @@ return []."
 ;; Operations
 ;;
 
+(defun read-post-body
+  []
+  (let [tmpfile (File/createTempFile "post-" ".txt")]
+    ;; Open text editor with new file
+    (-> (Runtime/getRuntime)
+         (.exec (->> tmpfile
+                     .getPath
+                     (conj (:editor cfg/*cfg*))
+                     into-array))
+         (.waitFor))
+    ;; Read body
+    (let [body (slurp tmpfile)]
+      (.delete tmpfile)
+      body)))
+
 (defn add-post
   "Add post."
-  []
-  (throw (ex-info "Not implemented.")))
+  [options]
+  (let [ts (java.util.Date.)
+        title (or
+               (:title options)
+               (ask-user "Title"))
+        desc (or
+              (:desc options)
+              (ask-user "Description"))
+        author (or (:author options)
+                   (ask-user "Author" (:author cfg/*cfg*)))
+        post-id (.format (SimpleDateFormat. "yyyy-MM-dd'T'HH-mm-ss'.txt'") ts)
+        date    (.format (DateFormat/getDateTimeInstance
+                          DateFormat/LONG
+                          DateFormat/LONG)
+                         ts)
+        body (read-post-body)]
+
+    (save-post (map->Post
+                {:ID post-id
+                 :TITLE title
+                 :AUTHOR author
+                 :DATE date
+                 :DESC desc
+                 :BODY body}))
+    ;; Update categories
+    
+    ;; Regenerate HTML
+    ;; 1. Post
+    ;; 2. Month
+    ;; 3. Main
+    ;; 4. Categories
+    ))
+
+
+(defn category-next-id
+  [cats]
+  ;; TODO FIXME STUB
+  "100")
 
 (defn add-cat
   "Add category."
-  []
-  (throw (ex-info "Not implemented.")))
-
+  [options]
+  (let [title (or
+               (:title options)
+               (ask-user "Category title"))
+        new-id (category-next-id *cats*)
+        file (str "cat_" new-id)]
+    (save-cat
+     (map->Category {:id new-id
+                     :apath (apath/archive [file ""])
+                     :file file
+                     :name title
+                     :files []
+                     :count 0
+                     :set #{}}))))
 
 (defn del-post
   "Delete post."
@@ -624,6 +732,13 @@ return []."
 Remove from old, add to new, regenerate everything."
   []
   (throw (ex-info "Not implemented.")))
+
+(defn command-add
+  "Handle --add option."
+  [options]
+  (if (= "new" (:cat options))
+    (add-cat options)
+    (add-post options)))
 
 (defn find-cat-by-id
   "Resolve cat ID into Category."
@@ -704,12 +819,15 @@ Remove from old, add to new, regenerate everything."
   (let [[options ignored banner] (apply cli args CLI-OPTIONS)
         has-cat (contains? options :cat)
         cmd-num (command-number options)
+        is-command-add  (:add options)
         is-command-help (or (> cmd-num 2) ; There's always :add
                             (contains? options :help))
         is-command-list (or (= cmd-num 1) ; There's always :add
                             (contains? options :list))]
     (cfg/with-config (cfg/load-config options)
       (cond
+       is-command-add
+          (command-add options)
        is-command-help
           (println banner)
        is-command-list

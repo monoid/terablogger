@@ -9,6 +9,8 @@
   "Return default config."
   {:blog-dir (or (System/getenv "BLOG_DIR")
                  "./blog")
+   :editor [(or (System/getenv "EDITOR")
+                 "emacs")]
    :page-size PAGE-SIZE
    :url "http://example-blog.com/blog/"
    :domain "example-blog.com"
