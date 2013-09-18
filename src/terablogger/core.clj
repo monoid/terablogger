@@ -627,6 +627,22 @@ return []."
    (for [cat cats]
      (write-cat cat))))
 
+(defn add-post-to-cat
+  [cat post-id]
+  (let [new-set (conj (:set cat) post-id)]
+    (assoc cat
+      :set new-set
+      :count (count new-set)
+      :files (sort new-set))))
+
+(defn del-post-from-cat
+  [cat post-id]
+  (let [new-set (disj (:set cat) post-id)]
+    (assoc cat
+      :set new-set
+      :count (count new-set)
+      :files (sort new-set))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Operations

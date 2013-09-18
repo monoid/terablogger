@@ -126,3 +126,40 @@
     (is (= (first categories)
            (binding [*cats* categories]
                     (find-cat-by-id 2))))))
+
+(deftest add-post-to-cat-simple
+  (testing "add-post-to-cat simple case"
+    (is (= (parse-cat "cat_1.db"
+                      "Test cat 1
+2013-08-23T120000.txt
+2013-08-28T120000.txt
+2013-08-30T120000.txt")
+           (add-post-to-cat (second categories)
+                            "2013-08-28T120000.txt")))))
+
+(deftest add-post-to-cat-existent
+  (testing "add-post-to-cat add existent post"
+    (is (= (parse-cat "cat_1.db"
+                      "Test cat 1
+2013-08-23T120000.txt
+2013-08-30T120000.txt")
+           (add-post-to-cat (second categories)
+                            "2013-08-23T120000.txt")))))
+
+(deftest del-post-from-cat-simple
+  (testing "add-post-to-cat simple case"
+    (is (= (parse-cat "cat_1.db"
+                      "Test cat 1
+2013-08-30T120000.txt")
+           (del-post-from-cat (second categories)
+                            "2013-08-23T120000.txt")))))
+
+
+(deftest del-post-from-cat-nonexist
+  (testing "add-post-to-cat: removing nonexistant post"
+    (is (= (parse-cat "cat_1.db"
+                      "Test cat 1
+2013-08-23T120000.txt
+2013-08-30T120000.txt")
+           (del-post-from-cat (second categories)
+                            "2013-08-28T120000.txt")))))
