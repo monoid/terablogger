@@ -105,6 +105,7 @@
             {:id "10",
              :apath ["archives" "cat_10" ""],
              :name "Test",
+             :file "cat_10.db"
              :files '("2013-08-23T120000.txt" "2013-08-30T120000.txt"),
              :count 2,
              :set     #{"2013-08-30T120000.txt" "2013-08-23T120000.txt"}})
