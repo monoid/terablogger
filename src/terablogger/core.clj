@@ -648,7 +648,7 @@ return []."
 ;; Operations
 ;;
 
-(defun read-post-body
+(defn read-post-body
   []
   (let [tmpfile (File/createTempFile "post-" ".txt")]
     ;; Open text editor with new file
