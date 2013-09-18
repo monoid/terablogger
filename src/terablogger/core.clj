@@ -17,10 +17,12 @@
   (:gen-class))
 
 (def ^:dynamic *cats*
-  "Parsed categories.")
+  "Parsed categories."
+  nil)
 
 (def ^:dynamic *posts*
-  "Parsed posts hash.")
+  "Parsed posts hash."
+  nil)
 
 
 (def list-cats
