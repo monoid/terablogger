@@ -21,9 +21,8 @@
   nil)
 
 (def ^:dynamic *posts*
-  "Parsed posts hash."
+  "Parsed posts hashmap.  It maps entry ID to delay with Entry."
   nil)
-
 
 (def list-cats
   "Function that return list of category files."
@@ -273,6 +272,20 @@ return []."
        :month-link (month-link month)
        :ts (post-ts id)
        :permalink (apath/full-url-path (apath/archive (post-apath id)))))))
+
+
+(defn get-post-map
+  "Map of post ID to delay with Entry for *posts* dynamic."
+  []
+  (let [plist (list-posts)
+        posts (map #(delay (parse-post *cats* plist)))]
+    (zipmap plist posts)))
+
+(defmacro with-posts
+  [& body]
+  `(binding [*posts* (get-post-map)]
+     ~@body))
+
 
 (defn month-apath
   "Post's month path from id."
@@ -621,7 +634,8 @@ return []."
                        :title (format "%s : %s"
                                       name (:title cfg/*cfg*)))
       (write-feed cat-apath
-                  (map *posts* (take (:page-size cfg/*cfg*) posts))))))
+                  (map (comp force *posts*)
+                       (take (:page-size cfg/*cfg*) posts))))))
 
 (defn write-cats
   [cats]
