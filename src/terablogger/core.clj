@@ -235,36 +235,40 @@ return []."
    DATE
    DESC
    BODY
-   categories
-   categories2
-   categories3
-   ID
-   hid
-   month
-   month-link
-   ts
-   permalink])
+   ID])
 
-(defn parse-post
-  "Parse blog post."
-  [cats id]
-  (let [txt (slurp (apath/data-path id))
-        lines (string/split-lines txt)
-        [headers body] (split-with #(not (re-seq #"^-----$" %)) lines)
+(defrecord Entry
+    [TITLE
+     AUTHOR
+     DATE
+     DESC
+     BODY
+     ID
+     categories
+     categories2
+     categories3
+     categories?
+     hid
+     month
+     month-link
+     ts
+     permalink])
+
+(defn extend-post
+  "Convert Post to Entry, adding derived field values used in templates."
+  [cats post]
+  (let [id (:ID post)
         categories (post-cats id cats)
         month (month-apath id)]
-    (map->Post
-     (assoc (parse-headers headers)
-       :BODY (fmt (string/join "\n" (butlast (rest (rest body))))
-                  (file-format id)
-                  cfg/*cfg*)
+    (map->Entry
+     (assoc post
        :categories categories
        :categories2 (string/join ", " (map :name categories))
        :categories3 (string/join ", "
                                  (map #(href (:apath %)
                                              (:name %))
                                       categories))
-       :ID id
+       :categories? (boolean (seq categories))
        ;; HTML id starts with letter; we add 'e' for compatibility
        ;; with nanoblogger.
        :hid (post-htmlid id)
@@ -273,6 +277,21 @@ return []."
        :ts (post-ts id)
        :permalink (apath/full-url-path (apath/archive (post-apath id)))))))
 
+
+(defn parse-post
+  "Parse blog post."
+  [cats id]
+  (let [txt (slurp (apath/data-path id))
+        lines (string/split-lines txt)
+        [headers body] (split-with #(not (re-seq #"^-----$" %)) lines)]
+    (->>
+     (assoc (parse-headers headers)
+       :ID id
+       :BODY (fmt (string/join "\n" (butlast (rest (rest body))))
+                  (file-format id)
+                  cfg/*cfg*))
+     map->Post
+     (extend-post cats))))
 
 (defn get-post-map
   "Map of post ID to delay with Entry for *posts* dynamic."
@@ -546,7 +565,7 @@ return []."
   (let [apath (feed-apath apath)
         feed-url (apath/full-url-path apath)]
     (->> {:cfg cfg/*cfg*
-          :entries (take (:page-size cfg/*cfg*) posts)
+          :entries (map force (take (:page-size cfg/*cfg*) posts))
           :lastmodified (post-ts (:ID (first posts)))
           :self-url feed-url}
          (render "atom")
@@ -556,7 +575,7 @@ return []."
 (defn archive-index
   [posts cats months]
   (render "all-posts"
-          {:posts posts
+          {:posts (map force posts)
            :cats cats
            :months (map (comp (partial hash-map :month) month-link first) months)
            :cfg cfg/*cfg*}))
@@ -659,22 +678,33 @@ return []."
       :count (count new-set)
       :files (sort new-set))))
 
+(defn find-cat-by-id
+  "Resolve cat ID into Category."
+  [cat-id]
+  (first (filter #(= (str cat-id) (:id %))
+                 *cats*)))
+
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Operations
 ;;
 
+(defn options-cats
+  "Resolve comma-separated list of category IDs into seq of Category objects."
+  [options]
+  (map find-cat-by-id (split* (:cat options) #",")))
+
 (defn read-post-body
   []
   (let [tmpfile (File/createTempFile "post-" ".txt")]
     ;; Open text editor with new file
     (-> (Runtime/getRuntime)
-         (.exec (->> tmpfile
-                     .getPath
-                     (conj (:editor cfg/*cfg*))
-                     into-array))
-         (.waitFor))
+        (.exec (->> tmpfile
+                    .getPath
+                    (conj (:editor cfg/*cfg*))
+                    into-array))
+        (.waitFor))
     ;; Read body
     (let [body (slurp tmpfile)]
       (.delete tmpfile)
@@ -692,30 +722,55 @@ return []."
               (ask-user "Description"))
         author (or (:author options)
                    (ask-user "Author" (:author cfg/*cfg*)))
-        post-id (.format (SimpleDateFormat. "yyyy-MM-dd'T'HH-mm-ss'.txt'") ts)
+        post-id (.format (SimpleDateFormat. "yyyy-MM-dd'T'HH_mm_ss'.txt'") ts)
         date    (.format (DateFormat/getDateTimeInstance
                           DateFormat/LONG
                           DateFormat/LONG)
                          ts)
-        body (read-post-body)]
-
-    (save-post (map->Post
+        body (read-post-body)
+        post (map->Post
                 {:ID post-id
                  :TITLE title
                  :AUTHOR author
                  :DATE date
                  :DESC desc
-                 :BODY body}))
+                 :BODY body})]
+
+    (save-post post)
     ;; Update categories
-
-    
-
-    ;; Regenerate HTML
-    ;; 1. Post
-    ;; 2. Month
-    ;; 3. Main
-    ;; 4. Categories
-    ))
+    (let [cats (set (options-cats options))
+          cat-ids (set (map :id cats))
+          cats* (map (fn [cat]
+                          (if (contains? cats cat)
+                            (add-post-to-cat post-id cat)
+                            cat))
+                     *cats*)]
+      (binding [*cats* cats*]
+        ;; Regenerate HTML
+        ;; 1. Post
+        (write-post (extend-post *cats* post))
+        ;; 2. Categories
+        (with-posts
+          (dorun
+           (for [cat (filter (comp cat-ids :id) *cats*)]
+             (do
+               (save-cat cat)
+               ;; Regenerate category HTML
+               (write-cat cat))))
+          ;; 2. Month
+          (let [plist (list-posts)
+                months1 (months plist)
+                ordered-months (sort #(compare (nth %2 0) (nth %1 0)) months1)
+                articles (parse-articles)]
+            (write-months ordered-months)
+            ;; 3. Archive and Main
+            (write-archive-index *posts* *cats* ordered-months)
+            ;; ;; Articles
+            ;; (write-articles articles)
+            (write-main-pages plist
+                              *cats* ordered-months articles
+                              (:cal (nth (first ordered-months) 1)))))
+        *cats*))))
 
 
 (defn category-next-id
@@ -771,20 +826,10 @@ Remove from old, add to new, regenerate everything."
 (defn command-add
   "Handle --add option."
   [options]
-  (if (= "new" (:cat options))
-    (add-cat options)
-    (add-post options)))
-
-(defn find-cat-by-id
-  "Resolve cat ID into Category."
-  [cat-id]
-  (first (filter #(= (str cat-id) (:id %))
-                 *cats*)))
-
-(defn options-cats
-  "Resolve comma-separated list of category IDs into seq of Category objects."
-  [options]
-  (map find-cat-by-id (split* (:cat options) #",")))
+  (binding [*cats* (map read-cat (list-cats))]
+    (if (= "new" (:cat options))
+      (add-cat options)
+      (add-post options))))
 
 (defn command-list
   "Handle --list <all,cat,current> command line option."
@@ -821,7 +866,7 @@ Remove from old, add to new, regenerate everything."
   [
    ;; Operations
 
-   ;; Declareing --add as a boolean is kludge as tools.cli has no
+   ;; Declaring --add as a boolean is kludge as tools.cli has no
    ;; other means to provide option without value. --no-add is just useless...
    ;; TODO: another option parsing library?
    ["-a" "--add" "Add post (default) or category (with -c new)." :flag true]
