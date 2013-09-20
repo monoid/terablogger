@@ -850,12 +850,10 @@ Remove from old, add to new, regenerate everything."
         (ls-posts posts))
 
       "cat"
-      (let [cat (first (options-cats options))]
-        (when cat
-          (let [plist (sort* (:set cat))
-                posts (map (partial parse-post *cats*)
-                           plist)]
-            (ls-posts (take (:page-size cfg/*cfg*) posts)))))
+      ;; List categories
+      (dorun
+       (for [c *cats*]
+         (println (format "%s. %s (%d)" (:id c) (:name c) (:count c)))))
 
       ;; Default:
       ;; TODO: throw an exception?
