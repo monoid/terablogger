@@ -127,6 +127,14 @@
            (binding [*cats* categories]
                     (find-cat-by-id 2))))))
 
+(deftest post-id-by-num-test
+  (testing "post-id-by-num"
+    (is (= "2013-08-28T120000.txt"
+           (post-id-by-num '("2013-08-23T120000.txt"
+                             "2013-08-28T120000.txt"
+                             "2013-08-30T120000.txt")
+                           2)))))
+
 (deftest add-post-to-cat-simple
   (testing "add-post-to-cat simple case"
     (is (= (parse-cat "cat_1.db"

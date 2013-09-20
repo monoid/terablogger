@@ -293,6 +293,11 @@ return []."
      map->Post
      (extend-post cats))))
 
+(defn post-id-by-num
+  "Convert post ID (1-based) from command line to real ID (timestamp)."
+  [plist num]
+  (nth plist (dec num)))
+
 (defn get-post-map
   "Map of post ID to delay with Entry for *posts* dynamic."
   []
