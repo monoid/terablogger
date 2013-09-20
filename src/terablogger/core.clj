@@ -278,7 +278,7 @@ return []."
   "Map of post ID to delay with Entry for *posts* dynamic."
   []
   (let [plist (list-posts)
-        posts (map #(delay (parse-post *cats* plist)))]
+        posts (map #(delay (parse-post *cats* %)) plist)]
     (zipmap plist posts)))
 
 (defmacro with-posts
