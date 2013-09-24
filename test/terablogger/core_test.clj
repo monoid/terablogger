@@ -77,11 +77,6 @@
    "2013-09-20T120000.txt"
    "2013-07-03T120000.txt"])
 
-(deftest sorted-months-test
-  (testing "sorted-months count"
-    (is (= 3
-           (count (sorted-months month-test-data))))))
-
 (deftest sorted-months-test2
   (testing "Ordering of sorted-months"
     (is (= '(["2013" "09"] ["2013" "08"] ["2013" "07"])
