@@ -71,6 +71,21 @@
     (is (= "index-page2.html"
            (paginated-filename 2)))))
 
+(def month-test-data
+  ["2013-08-23T120000.txt"
+   "2013-08-30T120000.txt"
+   "2013-09-20T120000.txt"
+   "2013-07-03T120000.txt"])
+
+(deftest sorted-months-test
+  (testing "sorted-months count"
+    (is (= 3
+           (count (sorted-months month-test-data))))))
+
+(deftest sorted-months-test2
+  (testing "Ordering of sorted-months"
+    (is (= '(["2013" "09"] ["2013" "08"] ["2013" "07"])
+           (map first (sorted-months month-test-data))))))
 
 (deftest post-ts-test1
   (testing "post-ts"

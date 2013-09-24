@@ -413,13 +413,19 @@ return []."
         (cal-header cal sym)
         (cal-body month days-list posts-grouped cal)))))
 
- (defn months
-   "Posts grouped by month-path."
+ (defn group-by-months
+   "Posts grouped by month-path (hash month-id ->
+ {:posts posts :cal calendar})."
    [posts]
-   (into {}
-         (for [[month-id posts] (group-by month-apath posts)]
-           [month-id {:posts posts
-                      :cal (month-cal month-id posts)}])))
+   (for [[month-id posts] (group-by month-apath posts)]
+     [month-id {:posts posts
+                :cal (month-cal month-id posts)}]))
+
+(defn sorted-months
+  "Posts grouped by month-path and sorted (sequence)."
+  [posts]
+  (sort #(compare (nth %2 0) (nth %1 0))
+        (group-by-months posts)))
 
 (defn write-month
   [[month-id info]]
