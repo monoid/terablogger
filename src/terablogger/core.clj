@@ -454,7 +454,7 @@ return []."
     ;; Header
     (dorun
      (for [field '(:TITLE :AUTHOR :DATE :DESC)]
-       (.write wrtr (format "%s: %s\n" field (field post)))))
+       (.write wrtr (format "%s: %s\n" (name field) (field post)))))
     ;; Body
     (doto wrtr
       (.write "-----\nBODY:\n")
