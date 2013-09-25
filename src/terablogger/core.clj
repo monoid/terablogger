@@ -1,6 +1,6 @@
 (ns terablogger.core
   (:require [clojure.java.io :as io]
-            [clojure.set :refer [intersection]]
+            [clojure.set :refer [intersection union]]
             [clojure.string :as string]
             [clojure.tools.cli :refer [cli]]
             [terablogger.cfg :as cfg]
@@ -695,7 +695,6 @@ return []."
   (first (filter #(= (str cat-id) (:id %))
                  *cats*)))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Operations
@@ -770,8 +769,7 @@ return []."
                (write-cat cat))))
           ;; 2. Month
           (let [plist (list-posts)
-                months1 (months plist)
-                ordered-months (sort #(compare (nth %2 0) (nth %1 0)) months1)
+                ordered-months (sorted-months plist)
                 articles (parse-articles)]
             (write-months ordered-months)
             ;; 3. Archive and Main
@@ -806,15 +804,54 @@ return []."
                      :count 0
                      :set #{}}))))
 
-(defn del-post
+(defn delete-post
   "Delete post."
-  []
+  [options]
   (throw (ex-info "Not implemented.")))
 
-(defn del-cat
-  "Delete category."
-  []
-  (throw (ex-info "Not implemented.")))
+(defn delete-cats
+  "Delete categories."
+  [options]
+  (binding [*cats* (map read-cat (list-cats))]
+    (let [cat-ids (split* (:cat options) #",")
+          cats (set (map find-cat-by-id cat-ids))
+          posts (reduce union {} (map :set cats))]
+      ;; Remove db files
+      (dorun
+       (for [cat cats]
+         (let [file (File. (apath/data-path (:file cat)))]
+           (.delete file))))
+      ;; Regenerate HTML
+      (binding [*cats* (remove (partial contains? cats)
+                                 *cats*)]
+        (with-posts
+          (println posts)
+          ;; Regenerate posts
+          (dorun
+           (for [pid posts]
+             (write-post (force (*posts* pid)))))
+          
+          ;; Regenerate categories that has common articles with removed.
+          ;; So far regenerate everything.
+          (dorun
+           (for [cat *cats*]
+             (write-cat cat)))
+          ;; Regenerate months of categories.
+
+          ;; Month archive
+          (write-months (sorted-months posts))
+          (let [plist (list-posts)
+                months-sorted (sorted-months plist)
+                articles (parse-articles)]
+            ;; Regenerate archive.
+            (write-archive-index *posts* *cats* months-sorted)
+            ;; ;; Articles
+            ;; (write-articles articles)
+            ;; Regenerate main.
+            (write-main-pages plist
+                              *cats* months-sorted articles
+                              (:cal (nth (first months-sorted) 1))))
+          *cats*)))))
 
 
 (defn edit-post
@@ -841,6 +878,13 @@ Remove from old, add to new, regenerate everything."
     (if (= "new" (:cat options))
       (add-cat options)
       (add-post options))))
+
+(defn command-del
+  "Handle --delete option."
+  [options]
+  (if (= "cat" (:delete options))
+    (delete-cats options)
+    (delete-post options)))
 
 (defn command-list
   "Handle --list <all,cat,current> command line option."
@@ -909,6 +953,7 @@ Remove from old, add to new, regenerate everything."
         has-cat (contains? options :cat)
         cmd-num (command-number options)
         is-command-add  (:add options)
+        is-command-del  (contains? options :delete)
         is-command-help (or (> cmd-num 2) ; There's always :add
                             (contains? options :help))
         is-command-list (or (= cmd-num 1) ; There's always :add
@@ -921,20 +966,20 @@ Remove from old, add to new, regenerate everything."
           (println banner)
        is-command-list
           (command-list options)
+       is-command-del
+          (command-del options)
        true
           (println "Not implemented yet."))))
 
   (comment
     (cfg/with-config (cfg/load-config)
       (binding [*cats* (map read-cat (list-cats))]
-        (let [
-              plist (list-posts)
+        (let [plist (list-posts)
               posts (map (partial parse-post *cats*)
                          plist)
-              articles (parse-articles)
-              months1 (months (list-posts))]
+              articles (parse-articles)]
           (binding [*posts* (into {} (map #(vector (:ID %) %) posts))]
-            (let [m (sort #(compare (nth %2 0) (nth %1 0)) months1)]
+            (let [m (sorted-months plist)]
               (dorun
                (for [post posts]
                  (write-post post)))
