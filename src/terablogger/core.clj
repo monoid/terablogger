@@ -825,7 +825,6 @@ return []."
       (binding [*cats* (remove (partial contains? cats)
                                  *cats*)]
         (with-posts
-          (println posts)
           ;; Regenerate posts
           (dorun
            (for [pid posts]
