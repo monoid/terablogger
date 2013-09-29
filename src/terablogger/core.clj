@@ -845,6 +845,9 @@ return []."
             (write-archive-index *posts* *cats* months-sorted)
             ;; ;; Articles
             ;; (write-articles articles)
+
+            ;; Feed
+            (write-feed [] plist)
             ;; Regenerate main.
             (write-main-pages plist
                               *cats* months-sorted articles
