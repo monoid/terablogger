@@ -71,8 +71,8 @@
         pages   (partition-all (:page-size cfg/*cfg*) posts)
         npages  (count pages)]
     (map list pages
-              (map #(paginated-bar % npages url-prefix) numbers)
-              (map paginated-filename numbers))))
+         (map #(paginated-bar % npages url-prefix) numbers)
+         (map paginated-filename numbers))))
 
 (defn truncatechars
   "If msg's length exeeds n, truncate it, appending '...'. "
@@ -186,15 +186,15 @@ return []."
   "Parse post's headers, returning a hash."
   [headers]
   (into {}
-         (map #(let [[key val] (string/split % #": " 2)]
-                    [(keyword key) val])
-                 headers)))
+        (map #(let [[key val] (string/split % #": " 2)]
+                [(keyword key) val])
+             headers)))
 
 (defn post-apath
   ([id]
      (conj (subvec (re-matches #"^(\d+)-(\d+)-(\d+)(T[0-9_]+).*" id)
                    1)
-          "index.html")))
+           "index.html")))
 
 (defn post-htmlid [id]
   "Id that is used for HTML article id."
@@ -230,12 +230,12 @@ return []."
                 cats)))
 
 (defrecord Post
-  [TITLE
-   AUTHOR
-   DATE
-   DESC
-   BODY
-   ID])
+    [TITLE
+     AUTHOR
+     DATE
+     DESC
+     BODY
+     ID])
 
 (defrecord Entry
     [TITLE
@@ -276,7 +276,6 @@ return []."
        :month-link (month-link month)
        :ts (post-ts id)
        :permalink (apath/full-url-path (apath/archive (post-apath id)))))))
-
 
 (defn parse-post
   "Parse blog post."
@@ -348,78 +347,78 @@ return []."
                  (dec (Integer/parseInt m)))
             y)))
 
- (defn cal-header [cal sym]
-   (let [week-start (.getFirstDayOfWeek cal)
-         weekdays (.getShortWeekdays sym)
-         week-len 7] ; Is it always so?
-     (format
-      "<tr>%s</tr>"
-      (string/join ""
-                   (for [i (range week-len)]
-                     (format "<th class=\"calendarday\">%s</th>"
-                             (get weekdays (inc (mod (+ i week-start -1)
-                                                     week-len)))))))))
+(defn cal-header [cal sym]
+  (let [week-start (.getFirstDayOfWeek cal)
+        weekdays (.getShortWeekdays sym)
+        week-len 7]                     ; Is it always so?
+    (format
+     "<tr>%s</tr>"
+     (string/join ""
+                  (for [i (range week-len)]
+                    (format "<th class=\"calendarday\">%s</th>"
+                            (get weekdays (inc (mod (+ i week-start -1)
+                                                    week-len)))))))))
 
- (defn cal-body [month days-list posts-grouped cal]
-   (let [week-start (.getFirstDayOfWeek cal)
-         fstday (.get cal Calendar/DAY_OF_WEEK)
-         week-len 7  ; Is it always so?
-         weeks (partition
-                week-len
-                week-len
-                (repeat week-len "")
-                (concat
-                 (repeat (mod (+ week-start fstday) ; Monday has index
-                              week-len)
-                         "")
-                 days-list))]
-     (string/join "\n"
-                  (for [week weeks]
-                    (format "<tr>%s</tr>"
-                            (string/join
-                             ""
-                             (for [d week]
-                               (if-let [posts (get posts-grouped (conj month d))]
-                                 (format "<td class=\"calendar\"><a href=\"%s#%s\">%s</a></td>"
-                                         (apath/full-url-path (apath/archive (conj month "index.html")))
-                                         (post-htmlid (first posts))
-                                         d)
-                                 (if (= "" d)
-                                   "<td></td>"
-                                   (format "<td class=\"calendar\">%s</td>" d))))))))))
+(defn cal-body [month days-list posts-grouped cal]
+  (let [week-start (.getFirstDayOfWeek cal)
+        fstday (.get cal Calendar/DAY_OF_WEEK)
+        week-len 7                      ; Is it always so?
+        weeks (partition
+               week-len
+               week-len
+               (repeat week-len "")
+               (concat
+                (repeat (mod (+ week-start fstday) ; Monday has index
+                             week-len)
+                        "")
+                days-list))]
+    (string/join "\n"
+                 (for [week weeks]
+                   (format "<tr>%s</tr>"
+                           (string/join
+                            ""
+                            (for [d week]
+                              (if-let [posts (get posts-grouped (conj month d))]
+                                (format "<td class=\"calendar\"><a href=\"%s#%s\">%s</a></td>"
+                                        (apath/full-url-path (apath/archive (conj month "index.html")))
+                                        (post-htmlid (first posts))
+                                        d)
+                                (if (= "" d)
+                                  "<td></td>"
+                                  (format "<td class=\"calendar\">%s</td>" d))))))))))
 
- (defn month-cal [month posts]
-   (let [[year mon] month
-         ;; Grouped and sorted within each group
-         posts-grouped (fmap sort* (days posts))
-         cal (Calendar/getInstance)  ; TODO: we cannot work with arabic
-                                     ; or chinese
-         sym (java.text.DateFormatSymbols/getInstance)]
+(defn month-cal [month posts]
+  (let [[year mon] month
+        ;; Grouped and sorted within each group
+        posts-grouped (fmap sort* (days posts))
+        cal (Calendar/getInstance)  ; TODO: we cannot work with arabic
+                                        ; or chinese
+        sym (java.text.DateFormatSymbols/getInstance)]
 
-     ;; Setup cal
-     (doto cal
-        (.clear)
-        (.set Calendar/YEAR (Integer/parseInt year))
-        (.set Calendar/MONTH (dec (Integer/parseInt mon)))
-        (.set Calendar/DAY_OF_MONTH 1))
+    ;; Setup cal
+    (doto cal
+      (.clear)
+      (.set Calendar/YEAR (Integer/parseInt year))
+      (.set Calendar/MONTH (dec (Integer/parseInt mon)))
+      (.set Calendar/DAY_OF_MONTH 1))
 
-     (let [days-list (map (partial format "%02d")
-                          (range 1 (.getActualMaximum cal
-                                                      Calendar/DAY_OF_MONTH)))
-           week-start (.getFirstDayOfWeek cal)]
-       (format
-        "<table><caption>%s</caption>\n%s\n%s</table>"
-        (month-text month)
-        (cal-header cal sym)
-        (cal-body month days-list posts-grouped cal)))))
+    (let [days-list (map (partial format "%02d")
+                         (range 1 (.getActualMaximum cal
+                                                     Calendar/DAY_OF_MONTH)))
+          week-start (.getFirstDayOfWeek cal)]
+      (format
+       "<table><caption>%s</caption>\n%s\n%s</table>"
+       (month-text month)
+       (cal-header cal sym)
+       (cal-body month days-list posts-grouped cal)))))
 
- (defn group-by-months
-   "Posts grouped by month-path (hash month-id ->
+(defn group-by-months
+  "Posts grouped by month-path (hash month-id ->
  {:posts posts :cal calendar})."
-   [posts]
-   (for [[month-id posts] (group-by month-apath posts)]
-     [month-id {:posts posts
-                :cal (month-cal month-id posts)}]))
+  [posts]
+  (for [[month-id posts] (group-by month-apath posts)]
+    [month-id {:posts posts
+               :cal (month-cal month-id posts)}]))
 
 (defn sorted-months
   "Posts grouped by month-path and sorted (sequence)."
@@ -504,20 +503,20 @@ return []."
      (for [[pposts ptab pfname] (paginate posts url)
            ;; File path
            :let [papath (conj apath pfname)]]
-       (apath/spit* papath
-                    (render template
-                            (assoc params
-                              :cfg cfg/*cfg*
-                              :body (string/join "" (map get-cached-post-part pposts))
-                              :tab ptab
-                              :feed (apath/full-url-path (feed-apath apath)))))))))
+       (render* (assoc params
+                  :cfg cfg/*cfg*
+                  :body (string/join "" (map get-cached-post-part pposts))
+                  :tab ptab
+                  :feed (apath/full-url-path (feed-apath apath)))
+                template
+                papath)))))
 
 (defn main-categories-html
   [cats]
   (->> cats
        (map #(format "%s&nbsp;%d"
-                         (href (:apath %) (:name %))
-                         (count (:files %))))
+                     (href (:apath %) (:name %))
+                     (count (:files %))))
        (string/join "<br>\n")))
 
 (defn month-link
@@ -558,9 +557,7 @@ return []."
                                   (:author cfg/*cfg*))
                 :calendar cal
                 :articles (articles-links articles)
-                :links (tmpl "main-links")
-               }
-               ))
+                :links (tmpl "main-links")}))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -656,8 +653,8 @@ return []."
   (let [{id :id
          name :name
          posts :files} cat
-        posts (sort* posts)
-        cat-apath (apath/archive [(format "cat_%s" id)])]
+         posts (sort* posts)
+         cat-apath (apath/archive [(format "cat_%s" id)])]
     (write-pages "category-archive"
                  posts
                  cat-apath
@@ -741,21 +738,21 @@ return []."
                          ts)
         body (read-post-body)
         post (map->Post
-                {:ID post-id
-                 :TITLE title
-                 :AUTHOR author
-                 :DATE date
-                 :DESC desc
-                 :BODY body})]
+              {:ID post-id
+               :TITLE title
+               :AUTHOR author
+               :DATE date
+               :DESC desc
+               :BODY body})]
 
     (save-post post)
     ;; Update categories
     (let [cats (set (options-cats options))
           cat-ids (set (map :id cats))
           cats* (map (fn [cat]
-                          (if (contains? cats cat)
-                            (add-post-to-cat post-id cat)
-                            cat))
+                       (if (contains? cats cat)
+                         (add-post-to-cat post-id cat)
+                         cat))
                      *cats*)]
       (binding [*cats* cats*]
         ;; Regenerate HTML
@@ -825,7 +822,7 @@ return []."
            (.delete file))))
       ;; Regenerate HTML
       (binding [*cats* (remove (partial contains? cats)
-                                 *cats*)]
+                               *cats*)]
         (with-posts
           ;; Regenerate posts
           (dorun
