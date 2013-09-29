@@ -1,6 +1,6 @@
 (ns terablogger.core
   (:require [clojure.java.io :as io]
-            [clojure.set :refer [intersection union]]
+            [clojure.set :refer [difference intersection union]]
             [clojure.string :as string]
             [clojure.tools.cli :refer [cli]]
             [terablogger.cfg :as cfg]
@@ -680,9 +680,9 @@ return []."
       :count (count new-set)
       :files (sort new-set))))
 
-(defn del-post-from-cat
-  [post-id cat]
-  (let [new-set (disj (:set cat) post-id)]
+(defn del-posts-from-cat
+  [post-ids cat]
+  (let [new-set (difference (:set cat) post-ids)]
     (assoc cat
       :set new-set
       :count (count new-set)

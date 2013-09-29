@@ -164,20 +164,20 @@
            (add-post-to-cat "2013-08-23T120000.txt"
                             (second categories))))))
 
-(deftest del-post-from-cat-simple
-  (testing "add-post-to-cat simple case"
+(deftest del-posts-from-cat-simple
+  (testing "del-post-to-cat simple case"
     (is (= (parse-cat "cat_1.db"
                       "Test cat 1
 2013-08-30T120000.txt")
-           (del-post-from-cat "2013-08-23T120000.txt"
-                              (second categories))))))
+           (del-posts-from-cat #{"2013-08-23T120000.txt"}
+                               (second categories))))))
 
 
-(deftest del-post-from-cat-nonexist
-  (testing "add-post-to-cat: removing nonexistant post"
+(deftest del-posts-from-cat-nonexist
+  (testing "del-post-to-cat: removing nonexistant post"
     (is (= (parse-cat "cat_1.db"
                       "Test cat 1
 2013-08-23T120000.txt
 2013-08-30T120000.txt")
-           (del-post-from-cat "2013-08-28T120000.txt"
-                              (second categories))))))
+           (del-posts-from-cat #{"2013-08-28T120000.txt"}
+                               (second categories))))))
