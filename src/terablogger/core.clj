@@ -806,7 +806,59 @@ return []."
 (defn delete-post
   "Delete post."
   [options]
-  (throw (ex-info "Not implemented.")))
+  (binding [*cats* (map read-cat (list-cats))]
+    (with-posts
+      (let [plist (list-posts)
+            post-nums (map #(Integer. %)
+                           (split* (:delete options) #","))
+            post-ids (set (remove nil?
+                                  (map (partial post-id-by-num plist)
+                                       post-nums)))
+            posts (map (comp force *posts*)
+                       post-ids)]
+        ;; Remove files
+        (dorun
+         (for [p posts]
+           (do
+             ;; Data
+             (-> (:ID p)
+                 apath/data-path
+                 (io/delete-file true))
+             ;; Cache
+             (-> (:ID p)
+                 post-apath
+                 apath/cache
+                 apath/blog-path
+                 (io/delete-file true)))))
+
+        ;; Filter out from post db
+        (binding [*posts* (apply dissoc *posts* post-ids)]
+          ;; We collect only ids because category objects will be
+          ;; updated later.
+          (let [cat-ids-to-upd (map :id
+                                    (filter #(->> %
+                                                  :set
+                                                  (intersection post-ids)
+                                                  seq)
+                                            *cats*))
+                plist (list-posts)
+                articles (list-articles)]
+            (binding [*cats* (map (partial del-posts-from-cat post-nums)
+                                  *cats*)]
+              (let [m (sorted-months plist)]
+                (dorun
+                 (for [c cat-ids-to-upd]
+                   (let [cat (find-cat-by-id c)]
+                     (save-cat cat)
+                     (write-cat cat))))
+                ;; Months
+                (write-months m)
+                ;; Archives
+                (write-archive-index *posts* *cats* m)
+                ;; Feed
+                (write-feed [] plist)
+                ;; Main
+                (write-main-pages plist *cats* m articles (:cal (nth (first m) 1)))))))))))
 
 (defn delete-cats
   "Delete categories."
