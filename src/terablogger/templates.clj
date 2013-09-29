@@ -12,3 +12,9 @@
 (defn render [name params]
   (parser/render (tmpl name)
                  params))
+
+
+(defn render* [params name ap]
+  (->> params
+       (render name)
+       (apath/spit* ap)))

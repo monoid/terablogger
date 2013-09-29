@@ -7,7 +7,7 @@
             [terablogger.apath :as apath]
             [terablogger.format-markdown]
             [terablogger.format-textile]
-            [terablogger.templates :refer [render tmpl]]
+            [terablogger.templates :refer [render render* tmpl]]
             [terablogger.format-html :refer [html-escape]])
   (:import java.io.File
            java.util.Calendar
@@ -152,23 +152,23 @@ return []."
          (let [[title & b] (line-seq rdr)
                aid (article-id a)
                body (string/join "\n" b)]
-          {:id aid
-           :html [aid "index.html"]
-           :title title
-           :body (fmt body (file-format a) cfg/*cfg*)
-           })))))
+           {:id aid
+            :html [aid "index.html"]
+            :title title
+            :body (fmt body (file-format a) cfg/*cfg*)
+            })))))
 
 (defn write-article
   [art]
   (let [apath (apath/articles (:html art))]
-    (apath/spit* apath
-                 (render "makepage"
-                         {:cfg cfg/*cfg*
-                          :body (:body art)
-                          :title? true
-                          :title (:title art)
-                          :feed (apath/full-url-path (feed-apath []))
-                          }))))
+    (render* {:cfg cfg/*cfg*
+              :body (:body art)
+              :title? true
+              :title (:title art)
+              :feed (apath/full-url-path (feed-apath []))
+              }
+             "makepage"
+             apath)))
 
 (defn write-articles
   [articles]
@@ -432,14 +432,14 @@ return []."
   (let [posts (:posts info)
         sorted-posts (sort* posts)
         apath (apath/archive (conj month-id "index.html"))]
-    (apath/spit* apath
-                 (render "month-archive"
-                         {:body (string/join "" (map get-cached-post-part sorted-posts))
-                          :cfg cfg/*cfg*
-                          :feed (apath/full-url-path (feed-apath []))
-                          :month (month-text month-id)
-                          :calendar (:cal info)
-                          }))))
+    (render* {:body (string/join "" (map get-cached-post-part sorted-posts))
+              :cfg cfg/*cfg*
+              :feed (apath/full-url-path (feed-apath []))
+              :month (month-text month-id)
+              :calendar (:cal info)
+              }
+             "month-archive"
+             apath)))
 
 (defn write-months
   [months]
@@ -462,26 +462,27 @@ return []."
       (.write "\n-----\n"))))
 
 (defn write-post
-    "Write post to cache and to archive."
-    [post]
-    (let [cfg      (assoc cfg/*cfg* :archive
-                          (apath/full-url-path (apath/archive [])))
-          entry    (assoc post
-                     :categories? (boolean (seq (:categories post))))
-          capath    (apath/cache (post-apath (:ID post)))
-          aapath    (apath/archive (post-apath (:ID post)))
-          content  (render "entry"
-                          {:cfg cfg :entry entry})
-          pcontent (render "permalink-entry"
-                           {:cfg cfg :entry entry})]
-      ;; Cached part
-      (apath/spit* capath content)
-      ;; Full post page
-      (apath/spit* aapath (render "permalink"
-                                  {:body pcontent
-                                   :cfg cfg/*cfg*
-                                   :title (:TITLE entry)
-                                   :feed (apath/full-url-path (feed-apath []))}))))
+  "Write post to cache and to archive."
+  [post]
+  (let [cfg      (assoc cfg/*cfg* :archive
+                        (apath/full-url-path (apath/archive [])))
+        entry    (assoc post
+                   :categories? (boolean (seq (:categories post))))
+        capath    (apath/cache (post-apath (:ID post)))
+        aapath    (apath/archive (post-apath (:ID post)))
+        content  (render "entry"
+                         {:cfg cfg :entry entry})
+        pcontent (render "permalink-entry"
+                         {:cfg cfg :entry entry})]
+    ;; Cached part
+    (apath/spit* capath content)
+    ;; Full post page
+    (render* {:body pcontent
+              :cfg cfg/*cfg*
+              :title (:TITLE entry)
+              :feed (apath/full-url-path (feed-apath []))}
+             "permalink"
+             aapath)))
 
 (defn ls-posts
   [posts]
@@ -575,12 +576,12 @@ return []."
   [apath posts]
   (let [apath (feed-apath apath)
         feed-url (apath/full-url-path apath)]
-    (->> {:cfg cfg/*cfg*
-          :entries (map force (take (:page-size cfg/*cfg*) posts))
-          :lastmodified (post-ts (:ID (first posts)))
-          :self-url feed-url}
-         (render "atom")
-         (apath/spit* apath))
+    (render* {:cfg cfg/*cfg*
+              :entries (map force (take (:page-size cfg/*cfg*) posts))
+              :lastmodified (post-ts (:ID (first posts)))
+              :self-url feed-url}
+             "atom"
+             apath)
     feed-url))
 
 (defn archive-index
@@ -588,17 +589,18 @@ return []."
   (render "all-posts"
           {:posts (map force posts)
            :cats cats
-           :months (map (comp (partial hash-map :month) month-link first) months)
+           :months (map (comp (partial hash-map :month) month-link first)
+                        months)
            :cfg cfg/*cfg*}))
 
 (defn write-archive-index
   [posts cats months]
-  (apath/spit* (apath/archive ["index.html"])
-         (render "makepage"
-                 {:body (archive-index posts cats months)
-                  :feed (apath/full-url-path (feed-apath []))
-                  :title? false
-                  :cfg cfg/*cfg*})))
+  (render* {:body (archive-index posts cats months)
+            :feed (apath/full-url-path (feed-apath []))
+            :title? false
+            :cfg cfg/*cfg*}
+           "makepage"
+           (apath/archive ["index.html"])))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
