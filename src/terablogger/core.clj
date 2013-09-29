@@ -818,8 +818,9 @@ return []."
       ;; Remove db files
       (dorun
        (for [cat cats]
-         (let [file (File. (apath/data-path (:file cat)))]
-           (.delete file))))
+         (-> (:file cat)
+             apath/data-path
+             (io/delete-file true))))
       ;; Regenerate HTML
       (binding [*cats* (remove (partial contains? cats)
                                *cats*)]
