@@ -570,9 +570,10 @@ return []."
   (conj apath "atom.xml"))
 
 (defn write-feed
-  [apath posts]
+  [apath post-ids]
   (let [apath (feed-apath apath)
-        feed-url (apath/full-url-path apath)]
+        feed-url (apath/full-url-path apath)
+        posts (map (comp force *posts*) post-ids)]
     (render* {:cfg cfg/*cfg*
               :entries (map force (take (:page-size cfg/*cfg*) posts))
               :lastmodified (post-ts (:ID (first posts)))
@@ -663,8 +664,7 @@ return []."
                        :title (format "%s : %s"
                                       name (:title cfg/*cfg*)))
       (write-feed cat-apath
-                  (map (comp force *posts*)
-                       (take (:page-size cfg/*cfg*) posts))))))
+                  (take (:page-size cfg/*cfg*) posts)))))
 
 (defn write-cats
   [cats]
