@@ -1023,31 +1023,4 @@ Remove from old, add to new, regenerate everything."
        is-command-del
           (command-del options)
        true
-          (println "Not implemented yet."))))
-
-  (comment
-    (cfg/with-config (cfg/load-config)
-      (binding [*cats* (map read-cat (list-cats))]
-        (let [plist (list-posts)
-              posts (map (partial parse-post *cats*)
-                         plist)
-              articles (parse-articles)]
-          (binding [*posts* (into {} (map #(vector (:ID %) %) posts))]
-            (let [m (sorted-months plist)]
-              (dorun
-               (for [post posts]
-                 (write-post post)))
-              ;; Main feed
-              (write-feed [] posts)
-              ;; Month archive
-              (write-months m)
-              ;; Category archive
-              (write-cats *cats*)
-              ;; Archive index
-              (write-archive-index posts *cats* m)
-              ;; Articles
-              (write-articles articles)
-              ;; Main page
-              (write-main-pages plist *cats* m articles (:cal (nth (first m) 1)))
-              ;; List recent posts
-              (ls-posts (take (:page-size cfg/*cfg*) posts)))))))))
+          (println "Not implemented yet.")))))
