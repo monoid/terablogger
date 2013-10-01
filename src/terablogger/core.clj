@@ -979,7 +979,7 @@ Remove from old, add to new, regenerate everything."
    ["-a" "--add" "Add post (default) or category (with -c new)." :flag true]
    ["-d" "--delete" "<ID,cat> Delete post or category (-d ID, -d cat)"]
    ["-e" "--edit" "<ID,cat>Edit article or categori (-e ID, -e cat)."]
-   ["-m" "--move" "<ID> Move post to another categories."]
+   ["-m" "--move" "<ID> Move post to other categories."]
    ["-u" "--update" "<all,current,main> Update blog (regenerate HTML)."]
    ["-l" "--list" "<all,cat,current> List posts."]
    ["-h" "--help" "Print help."]
