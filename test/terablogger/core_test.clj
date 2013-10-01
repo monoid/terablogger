@@ -181,3 +181,23 @@
 2013-08-30T120000.txt")
            (del-posts-from-cat #{"2013-08-28T120000.txt"}
                                (second categories))))))
+
+(deftest command-number--empty
+  (testing "command-number when no option provided"
+    (is (= 0 (command-number {:add false})))))
+
+(deftest command-number--add-only
+  (testing "command-number when only --add is provided"
+    (is (= 1 (command-number {:add true})))))
+
+(deftest command-number--delete-only
+  (testing "command-number when only --delete is provided"
+    (is (= 1 (command-number {:add false :delete "1"})))))
+
+(deftest command-number--add+del
+  (testing "command-number when both --add and --delete are provided"
+    (is (= 2 (command-number {:add true :delete "1"})))))
+
+(deftest command-number--move+del
+  (testing "command-number when both --move and --delete are provided"
+    (is (= 2 (command-number {:add false :delete "1" :move "2"})))))

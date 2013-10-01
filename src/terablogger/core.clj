@@ -993,9 +993,13 @@ Remove from old, add to new, regenerate everything."
 
 (defn command-number
   [params]
-  (count
-   (intersection (set (keys params))
-                 (set [:add :delete :edit :move :update :list]))))
+  (+ (count
+      (intersection (set (keys params))
+                    #{:delete :edit :move :update :list}))
+     ;; :add is special case as it is a boolean flag (KLUDGE)
+     (if (:add params)
+       1
+       0)))
 
 (defn -main
   "I don't do a whole lot ... yet."
@@ -1008,18 +1012,20 @@ Remove from old, add to new, regenerate everything."
         cmd-num (command-number options)
         is-command-add  (:add options)
         is-command-del  (contains? options :delete)
-        is-command-help (or (> cmd-num 2) ; There's always :add
+        is-command-help (or (> cmd-num 1)
                             (contains? options :help))
-        is-command-list (or (= cmd-num 1) ; There's always :add
+        is-command-list (or (= cmd-num 0)
                             (contains? options :list))]
     (cfg/with-config (cfg/load-config options)
       (cond
-       is-command-add
-          (command-add options)
+       ;; Help is first because it executed when there are several options
+       ;; are passed by mistake.
        is-command-help
           (println banner)
        is-command-list
           (command-list options)
+       is-command-add
+          (command-add options)
        is-command-del
           (command-del options)
        true
