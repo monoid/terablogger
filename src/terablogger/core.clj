@@ -704,20 +704,26 @@ return []."
   [options]
   (map find-cat-by-id (split* (:cat options) #",")))
 
+(defn exec-editor [path]
+  (-> (Runtime/getRuntime)
+      (.exec (->> path
+                  io/as-file
+                  .getPath
+                  (conj (:editor cfg/*cfg*))
+                  into-array))
+      (.waitFor)))
+
 (defn read-post-body
   []
   (let [tmpfile (File/createTempFile "post-" ".txt")]
-    ;; Open text editor with new file
-    (-> (Runtime/getRuntime)
-        (.exec (->> tmpfile
-                    .getPath
-                    (conj (:editor cfg/*cfg*))
-                    into-array))
-        (.waitFor))
-    ;; Read body
-    (let [body (slurp tmpfile)]
-      (.delete tmpfile)
-      body)))
+    (try
+      ;; Open text editor with new file
+      (exec-editor tmpfile)
+      ;; Read body
+      (slurp tmpfile)
+
+      (finally
+        (.delete tmpfile)))))
 
 (defn add-post
   "Add post."
