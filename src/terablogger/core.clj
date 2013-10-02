@@ -635,6 +635,15 @@ return []."
   (let [txt (slurp (apath/data-path file))]
     (parse-cat file txt)))
 
+(defn read-cats
+  []
+  (map read-cat (list-cats)))
+
+(defmacro with-cats
+  [& body]
+  `(binding [*cats* (read-cats)]
+     ~@body))
+
 (defn save-cat
   "Save category data to text file."
   [cat]
@@ -812,7 +821,7 @@ return []."
 (defn delete-post
   "Delete post."
   [options]
-  (binding [*cats* (map read-cat (list-cats))]
+  (with-cats
     (with-posts
       (let [plist (list-posts)
             post-nums (map #(Integer. %)
@@ -869,7 +878,7 @@ return []."
 (defn delete-cats
   "Delete categories."
   [options]
-  (binding [*cats* (map read-cat (list-cats))]
+  (with-cats
     (let [cat-ids (split* (:cat options) #",")
           cats (set (map find-cat-by-id cat-ids))
           posts (reduce union {} (map :set cats))]
@@ -934,7 +943,7 @@ Remove from old, add to new, regenerate everything."
 (defn command-add
   "Handle --add option."
   [options]
-  (binding [*cats* (map read-cat (list-cats))]
+  (with-cats
     (if (= "new" (:cat options))
       (add-cat options)
       (add-post options))))
@@ -949,7 +958,7 @@ Remove from old, add to new, regenerate everything."
 (defn command-list
   "Handle --list <all,cat,current> command line option."
   [options]
-  (binding [*cats* (map read-cat (list-cats))]
+  (with-cats
     (case (:list options)
       ;; We also accept "last" and "new".  Undocumented feature :)
       ("current" "last" "new" nil)
