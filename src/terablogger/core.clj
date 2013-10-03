@@ -790,6 +790,9 @@ return []."
             (write-archive-index *posts* *cats* ordered-months)
             ;; ;; Articles
             ;; (write-articles articles)
+            ;; Feed
+            (write-feed [] plist)
+            ;; Main
             (write-main-pages plist
                               *cats* ordered-months articles
                               (:cal (nth (first ordered-months) 1)))))
