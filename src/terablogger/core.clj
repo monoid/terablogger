@@ -933,11 +933,37 @@ return []."
 
 (defn edit-post
   "Edit post."
-  []
-  (throw (ex-info "Not implemented.")))
+  [options]
+  (let [plist (list-posts)
+        post-num (Integer. (:edit options))
+        post-id (post-id-by-num plist post-num)
+        post-file (apath/data-path post-id)]
+    (exec-editor post-file)
+    (with-cats
+      (with-posts
+        (let [post (force (*posts* post-id))
+              ;; This is a single month, actually
+              post-months (sorted-months [post-id])
+              months (sorted-months plist)
+              articles (parse-articles)]
+          ;; Regenerate post and cache
+          (write-post post)
+          ;; Regenerate categories
+          (dorun
+           (for [cat *cats*
+                 :when (contains? (:set cat) post-id)]
+             (write-cat cat)))
+          ;; Regenerate months
+          (write-months post-months)
+          ;; Regenerate feed
+          (write-feed [] plist)
+          ;; Regenerate main
+          (write-main-pages plist
+                            *cats* months articles
+                            (:cal (nth (first months) 1))))))))
 
 (defn edit-cat
-  "Edit post."
+  "Edit category."
   []
   (throw (ex-info "Not implemented.")))
 
@@ -962,6 +988,13 @@ Remove from old, add to new, regenerate everything."
   (if (= "cat" (:delete options))
     (delete-cats options)
     (delete-post options)))
+
+(defn command-edit
+  "Handle --edit option."
+  [options]
+  (if (= "cat" (:edit options))
+    (edit-cat options)
+    (edit-post options)))
 
 (defn command-list
   "Handle --list <all,cat,current> command line option."
@@ -1001,7 +1034,7 @@ Remove from old, add to new, regenerate everything."
    ;; TODO: another option parsing library?
    ["-a" "--add" "Add post (default) or category (with -c new)." :flag true]
    ["-d" "--delete" "<ID,cat> Delete post or category (-d ID, -d cat)"]
-   ["-e" "--edit" "<ID,cat>Edit article or categori (-e ID, -e cat)."]
+   ["-e" "--edit" "<ID,cat>Edit article or category (-e ID, -e cat)."]
    ["-m" "--move" "<ID> Move post to other categories."]
    ["-u" "--update" "<all,current,main> Update blog (regenerate HTML)."]
    ["-l" "--list" "<all,cat,current> List posts."]
@@ -1033,12 +1066,14 @@ Remove from old, add to new, regenerate everything."
   (let [[options ignored banner] (apply cli args CLI-OPTIONS)
         has-cat (contains? options :cat)
         cmd-num (command-number options)
-        is-command-add  (:add options)
-        is-command-del  (contains? options :delete)
         is-command-help (or (> cmd-num 1)
                             (contains? options :help))
         is-command-list (or (= cmd-num 0)
-                            (contains? options :list))]
+                            (contains? options :list))
+        is-command-add  (:add options)
+        is-command-del  (contains? options :delete)
+        is-command-edit (contains? options :edit)
+]
     (cfg/with-config (cfg/load-config options)
       (cond
        ;; Help is first because it executed when there are several options
@@ -1051,5 +1086,7 @@ Remove from old, add to new, regenerate everything."
           (command-add options)
        is-command-del
           (command-del options)
+       is-command-edit
+          (command-edit options)
        true
           (println "Not implemented yet.")))))
