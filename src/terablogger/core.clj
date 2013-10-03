@@ -330,10 +330,19 @@ return []."
 (defn fmap [f m]
   (into {} (for [[k v] m] [k (f v)])))
 
+
+(declare write-post)
+
 (defn get-cached-post-part
   "Load part from cache."
   [post-id]
-  (slurp (apath/blog-path (apath/cache (post-apath post-id)))))
+  (let [filename (-> post-id
+                     post-apath
+                     apath/cache
+                     apath/blog-path)]
+    (when-not (.exists (io/file filename))
+      (write-post (force (*posts* post-id))))
+    (slurp filename)))
 
 (defn month-text
   [[y m]]
