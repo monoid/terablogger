@@ -801,8 +801,13 @@ return []."
 
 (defn category-next-id
   [cats]
-  ;; TODO FIXME STUB
-  "100")
+  (with-cats
+    (str
+     (if (seq *cats*)
+       (inc (reduce max
+                    (map #(Integer/parseInt (:id %))
+                         *cats*)))
+       1))))
 
 (defn add-cat
   "Add category."
