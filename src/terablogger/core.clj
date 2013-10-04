@@ -973,8 +973,46 @@ return []."
 
 (defn edit-cat
   "Edit category."
-  []
-  (throw (ex-info "Not implemented.")))
+  [options]
+  (with-cats
+    (if-let [cat (find-cat-by-id (:cat options))]
+      (let [new-title (or (:title options)
+                          (ask-user "Category title"))
+            new-cat (assoc cat :name new-title)]
+        (binding [*cats* (map #(if (= (:id %) (:id cat))
+                                 new-cat
+                                 %)
+                              *cats*)]
+          (save-cat new-cat)
+
+          (with-posts
+            (let [plist (list-posts)
+                  months (sorted-months plist)
+                  articles (parse-articles)]
+              ;; Update posts
+              (dorun
+               (for [p (:files new-cat)]
+                 (write-post (force (*posts* p)))))
+              ;; Update post's cats
+              (dorun
+               (for [c *cats*
+                     :when (-> (:set c)
+                               (intersection (:set new-cat))
+                               empty?
+                               not)]
+                 (write-cat c)))
+              ;; Update months
+              ;; TODO: wrong!  Calendar will miss posts that are not
+              ;; part of category.
+              ;; TODO Fix everywhere
+              (write-months (sorted-months (:files new-cat)))
+              ;; Update feed
+              (write-feed [] plist)
+              ;; Update main
+              (write-main-pages plist *cats*
+                                months articles
+                                (:cal (nth (first months) 1)))))))
+      (println "Category not found."))))
 
 
 (defn move-post
