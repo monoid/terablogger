@@ -82,6 +82,18 @@
     (is (= '(["2013" "09"] ["2013" "08"] ["2013" "07"])
            (map first (sorted-months month-test-data))))))
 
+(deftest posts-months-test
+  (testing "post-months"
+    (is (= #{["2013" "09"] ["2013" "08"] ["2013" "07"]}
+           (posts-months month-test-data)))))
+
+(deftest sorted-months-subset-test
+  (testing "sorted-months-subset"
+    (is (= ["2013" "08"]
+           (ffirst
+            (sorted-months-subset ["2013-08-23T120000.txt"]
+                                  (sorted-months month-test-data)))))))
+
 (deftest post-ts-test1
   (testing "post-ts"
     (is (= "2012-10-12T22:51:57Z"

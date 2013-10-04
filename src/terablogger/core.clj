@@ -435,6 +435,14 @@ return []."
   (sort #(compare (nth %2 0) (nth %1 0))
         (group-by-months posts)))
 
+(defn posts-months [post-ids]
+  (set (map month-apath post-ids)))
+
+(defn sorted-months-subset
+  [post-ids months]
+  (let [pm (posts-months post-ids)]
+    (filter (comp pm first) months)))
+
 (defn write-month
   [[month-id info]]
   (let [posts (:posts info)
@@ -918,11 +926,11 @@ return []."
              (write-cat cat)))
           ;; Regenerate months of categories.
 
-          ;; Month archive
-          (write-months (sorted-months posts))
           (let [plist (list-posts)
                 months-sorted (sorted-months plist)
                 articles (parse-articles)]
+            ;; Month archive
+            (write-months (sorted-months-subset months-sorted posts))
             ;; Regenerate archive.
             (write-archive-index *posts* *cats* months-sorted)
             ;; ;; Articles
@@ -948,9 +956,9 @@ return []."
     (with-cats
       (with-posts
         (let [post (force (*posts* post-id))
-              ;; This is a single month, actually
-              post-months (sorted-months [post-id])
               months (sorted-months plist)
+              ;; This is a single month, actually
+              post-months (sorted-months-subset [post-id] months)
               articles (parse-articles)]
           ;; Regenerate post and cache
           (write-post post)
@@ -1002,7 +1010,7 @@ return []."
               ;; TODO: wrong!  Calendar will miss posts that are not
               ;; part of category.
               ;; TODO Fix everywhere
-              (write-months (sorted-months (:files new-cat)))
+              (write-months (sorted-months-subset (:files new-cat) months))
               ;; Update feed
               (write-feed [] plist)
               ;; Update main
