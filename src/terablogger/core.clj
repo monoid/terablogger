@@ -810,13 +810,10 @@ return []."
 
 (defn category-next-id
   [cats]
-  (with-cats
-    (str
-     (if (seq *cats*)
-       (inc (reduce max
-                    (map #(Integer/parseInt (:id %))
-                         *cats*)))
-       1))))
+  (str
+   (inc (reduce max 0
+                (map #(Integer/parseInt (:id %))
+                     cats)))))
 
 (defn add-cat
   "Add category."

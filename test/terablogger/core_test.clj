@@ -184,11 +184,11 @@
 
 (deftest category-next-id--empty
   (testing "category-next-id when there are no categories"
-    (= "1" (category-next-id []))))
+    (is (= "1" (category-next-id [])))))
 
 (deftest category-next-id--standard
   (testing "category-next-id when there are number of categories"
-    (= "3" (category-next-id categories))))
+    (is (= "3" (category-next-id categories)))))
 
 (deftest command-number--empty
   (testing "command-number when no option provided"
