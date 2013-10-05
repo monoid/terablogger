@@ -435,12 +435,15 @@ return []."
   (sort #(compare (nth %2 0) (nth %1 0))
         (group-by-months posts)))
 
-(defn posts-months [post-ids]
+(defn posts-month-ids
+  "Set of month IDs for group of post IDs."
+  [post-ids]
   (set (map month-apath post-ids)))
 
 (defn sorted-months-subset
+  "Subset of months for group of post IDs"
   [post-ids months]
-  (let [pm (posts-months post-ids)]
+  (let [pm (posts-month-ids post-ids)]
     (filter (comp pm first) months)))
 
 (defn write-month

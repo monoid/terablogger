@@ -82,10 +82,10 @@
     (is (= '(["2013" "09"] ["2013" "08"] ["2013" "07"])
            (map first (sorted-months month-test-data))))))
 
-(deftest posts-months-test
-  (testing "post-months"
+(deftest posts-month-ids-test
+  (testing "post-month-ids"
     (is (= #{["2013" "09"] ["2013" "08"] ["2013" "07"]}
-           (posts-months month-test-data)))))
+           (posts-month-ids month-test-data)))))
 
 (deftest sorted-months-subset-test
   (testing "sorted-months-subset"
