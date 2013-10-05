@@ -563,21 +563,22 @@ return []."
        (string/join "<br>\n")))
 
 (defn write-main-pages
-  [posts cats months articles cal]
-  (write-pages "main-index"
-               posts
-               []
-               {:feed (apath/full-url-path (feed-apath []))
-                :categories (main-categories-html cats)
-                :archive-index (apath/full-url-path (apath/archive ["index.html"]))
-                :month-links (main-month-links months)
-                :count (count posts)
-                :last (:DATE (parse-post cats (first posts)))
-                :contacts (format (:contacts cfg/*cfg*)
-                                  (:author cfg/*cfg*))
-                :calendar cal
-                :articles (articles-links articles)
-                :links (tmpl "main-links")}))
+  [posts months articles]
+  (let [cal (:cal (nth (first months) 1))]
+    (write-pages "main-index"
+                 posts
+                 []
+                 {:feed (apath/full-url-path (feed-apath []))
+                  :categories (main-categories-html *cats*)
+                  :archive-index (apath/full-url-path (apath/archive ["index.html"]))
+                  :month-links (main-month-links months)
+                  :count (count posts)
+                  :last (:DATE (parse-post *cats* (first posts)))
+                  :contacts (format (:contacts cfg/*cfg*)
+                                    (:author cfg/*cfg*))
+                  :calendar cal
+                  :articles (articles-links articles)
+                  :links (tmpl "main-links")})))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -814,8 +815,7 @@ return []."
             (write-feed [] plist)
             ;; Main
             (write-main-pages plist
-                              *cats* ordered-months articles
-                              (:cal (nth (first ordered-months) 1)))))
+                              ordered-months articles)))
         *cats*))))
 
 
@@ -898,7 +898,7 @@ return []."
                 ;; Feed
                 (write-feed [] plist)
                 ;; Main
-                (write-main-pages plist *cats* m articles (:cal (nth (first m) 1)))))))))))
+                (write-main-pages plist m articles)))))))))
 
 (defn delete-cats
   "Delete categories."
@@ -943,8 +943,7 @@ return []."
             (write-feed [] plist)
             ;; Regenerate main.
             (write-main-pages plist
-                              *cats* months-sorted articles
-                              (:cal (nth (first months-sorted) 1))))
+                              months-sorted articles))
           *cats*)))))
 
 
@@ -976,8 +975,7 @@ return []."
           (write-feed [] plist)
           ;; Regenerate main
           (write-main-pages plist
-                            *cats* months articles
-                            (:cal (nth (first months) 1))))))))
+                            months articles))))))
 
 (defn edit-cat
   "Edit category."
@@ -1017,9 +1015,8 @@ return []."
               ;; Update feed
               (write-feed [] plist)
               ;; Update main
-              (write-main-pages plist *cats*
-                                months articles
-                                (:cal (nth (first months) 1)))))))
+              (write-main-pages plist
+                                months articles)))))
       (println "Category not found."))))
 
 
