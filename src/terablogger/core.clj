@@ -1008,9 +1008,6 @@ return []."
                                not)]
                  (write-cat c)))
               ;; Update months
-              ;; TODO: wrong!  Calendar will miss posts that are not
-              ;; part of category.
-              ;; TODO Fix everywhere
               (write-months (sorted-months-subset (:files new-cat) months))
               ;; Update feed
               (write-feed [] plist)
