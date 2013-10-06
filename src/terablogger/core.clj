@@ -1024,8 +1024,48 @@ return []."
 (defn move-post
   "Move post to categories.
 Remove from old, add to new, regenerate everything."
-  []
-  (throw (ex-info "Not implemented.")))
+  [options]
+  (with-cats
+    (let [plist (list-posts)
+          post-num (Integer. (:move options))
+          post-id (post-id-by-num plist post-num)
+          old-cats (post-cats post-id *cats*)
+          old-cats* (set (map :id old-cats))
+          cats (options-cats options)
+          cats* (set (map :id cats))
+          removed (difference old-cats* cats*)
+          added (difference cats* old-cats*)
+          to-regen (union cats* old-cats*)]
+      (binding [*cats* (map #(cond
+                              (removed (:id %))
+                                (del-posts-from-cat [post-id] %)
+                              (added (:id %))
+                                (add-post-to-cat post-id %)
+                              :else %)
+                            *cats*)]
+        (with-posts
+          (let [post (force (*posts* post-id))
+                m (sorted-months plist)
+                articles (parse-articles)]
+            ;; Update post
+            (write-post post)
+            ;; Update cats
+            (dorun
+             (for [c *cats*
+                   :when (to-regen (:id c))]
+               (do
+                 (when (or (removed (:id c))
+                           (added (:id c)))
+                   (save-cat c))
+                 (write-cat c))))
+            ;; Update months
+            (write-months (sorted-months-subset [post-id] m))
+            ;; Feed
+            (write-feed [] plist)
+            ;; Regenerate archive.
+            (write-archive-index plist *cats* m)
+            ;; Main
+            (write-main-pages plist m articles)))))))
 
 (defn command-add
   "Handle --add option."
@@ -1048,6 +1088,11 @@ Remove from old, add to new, regenerate everything."
   (if (= "cat" (:edit options))
     (edit-cat options)
     (edit-post options)))
+
+(defn command-move
+  "Handle --move <ID> command line option."
+  [options]
+  (move-post options))
 
 (defn command-list
   "Handle --list <all,cat,current> command line option."
@@ -1126,7 +1171,7 @@ Remove from old, add to new, regenerate everything."
         is-command-add  (:add options)
         is-command-del  (contains? options :delete)
         is-command-edit (contains? options :edit)
-]
+        is-command-move (contains? options :move)]
     (cfg/with-config (cfg/load-config options)
       (cond
        ;; Help is first because it executed when there are several options
@@ -1141,5 +1186,7 @@ Remove from old, add to new, regenerate everything."
           (command-del options)
        is-command-edit
           (command-edit options)
+       is-command-move
+          (command-move options)
        true
           (println "Not implemented yet.")))))
