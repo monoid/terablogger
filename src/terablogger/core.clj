@@ -604,17 +604,17 @@ return []."
     feed-url))
 
 (defn archive-index
-  [posts cats months]
+  [plist cats months]
   (render "all-posts"
-          {:posts (map force posts)
+          {:posts (map (comp force *posts*) plist)
            :cats cats
            :months (map (comp (partial hash-map :month) month-link first)
                         months)
            :cfg cfg/*cfg*}))
 
 (defn write-archive-index
-  [posts cats months]
-  (render* {:body (archive-index posts cats months)
+  [plist cats months]
+  (render* {:body (archive-index plist cats months)
             :feed (apath/full-url-path (feed-apath []))
             :title? false
             :cfg cfg/*cfg*}
@@ -808,7 +808,7 @@ return []."
                 articles (parse-articles)]
             (write-months ordered-months)
             ;; 3. Archive and Main
-            (write-archive-index *posts* *cats* ordered-months)
+            (write-archive-index plist *cats* ordered-months)
             ;; ;; Articles
             ;; (write-articles articles)
             ;; Feed
@@ -894,7 +894,7 @@ return []."
                 ;; Months
                 (write-months m)
                 ;; Archives
-                (write-archive-index *posts* *cats* m)
+                (write-archive-index plist *cats* m)
                 ;; Feed
                 (write-feed [] plist)
                 ;; Main
@@ -935,7 +935,7 @@ return []."
             ;; Month archive
             (write-months (sorted-months-subset months-sorted posts))
             ;; Regenerate archive.
-            (write-archive-index *posts* *cats* months-sorted)
+            (write-archive-index plist *cats* months-sorted)
             ;; ;; Articles
             ;; (write-articles articles)
 
@@ -973,6 +973,8 @@ return []."
           (write-months post-months)
           ;; Regenerate feed
           (write-feed [] plist)
+          ;; Regenerate archive.
+          (write-archive-index plist *cats* months)
           ;; Regenerate main
           (write-main-pages plist
                             months articles))))))
@@ -1011,6 +1013,8 @@ return []."
               (write-months (sorted-months-subset (:files new-cat) months))
               ;; Update feed
               (write-feed [] plist)
+              ;; Regenerate archive.
+              (write-archive-index plist *cats* months)
               ;; Update main
               (write-main-pages plist
                                 months articles)))))
