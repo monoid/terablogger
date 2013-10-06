@@ -712,7 +712,7 @@ return []."
 
 (defn del-posts-from-cat
   [post-ids cat]
-  (let [new-set (difference (:set cat) post-ids)]
+  (let [new-set (difference (:set cat) (set post-ids))]
     (assoc cat
       :set new-set
       :count (count new-set)
