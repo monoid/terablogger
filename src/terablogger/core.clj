@@ -1094,6 +1094,41 @@ Remove from old, add to new, regenerate everything."
   [options]
   (move-post options))
 
+(defn command-update
+  [options]
+  (let [plist (list-posts)
+        months (sorted-months plist)]
+    (with-cats
+      (with-posts
+        (case (:update options)
+          "all"
+          (let [articles (parse-articles)]
+            ;; Update posts
+            (dorun
+             (for [p plist]
+               (write-post (force (*posts* p)))))
+            ;; Update cats
+            (dorun
+             (for [c *cats*]
+               (do
+                 (write-cat c))))
+            ;; Update months
+            (write-months months)
+            ;; Feed
+            (write-feed [] plist)
+            ;; Regenerate archive.
+            (write-archive-index plist *cats* months)
+            ;; Articles
+            (write-articles articles)
+            ;; Main
+            (write-main-pages plist months articles))
+          "current"
+          (throw (ex-info "Not-implemented."))
+          "main"
+          (throw (ex-info "Not-implemented."))
+          ;; Otherwise
+          (println "Unknown --update value: " (:update options)))))))
+
 (defn command-list
   "Handle --list <all,cat,current> command line option."
   [options]
@@ -1171,7 +1206,8 @@ Remove from old, add to new, regenerate everything."
         is-command-add  (:add options)
         is-command-del  (contains? options :delete)
         is-command-edit (contains? options :edit)
-        is-command-move (contains? options :move)]
+        is-command-move (contains? options :move)
+        is-command-update (contains? options :update)]
     (cfg/with-config (cfg/load-config options)
       (cond
        ;; Help is first because it executed when there are several options
@@ -1188,5 +1224,7 @@ Remove from old, add to new, regenerate everything."
           (command-edit options)
        is-command-move
           (command-move options)
+       is-command-update
+          (command-update options)
        true
           (println "Not implemented yet.")))))
