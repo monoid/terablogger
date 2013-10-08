@@ -1097,12 +1097,13 @@ Remove from old, add to new, regenerate everything."
 (defn command-update
   [options]
   (let [plist (list-posts)
-        months (sorted-months plist)]
+        months (sorted-months plist)
+        articles (parse-articles)]
     (with-cats
       (with-posts
         (case (:update options)
           "all"
-          (let [articles (parse-articles)]
+          (do
             ;; Update posts
             (dorun
              (for [p plist]
@@ -1121,6 +1122,10 @@ Remove from old, add to new, regenerate everything."
             ;; Articles
             (write-articles articles)
             ;; Main
+            (write-main-pages plist months articles))
+          "articles"
+          (do
+            (write-articles articles)
             (write-main-pages plist months articles))
           "current"
           (throw (ex-info "Not-implemented."))
@@ -1169,7 +1174,7 @@ Remove from old, add to new, regenerate everything."
    ["-d" "--delete" "<ID,cat> Delete post or category (-d ID, -d cat)"]
    ["-e" "--edit" "<ID,cat>Edit article or category (-e ID, -e cat)."]
    ["-m" "--move" "<ID> Move post to other categories."]
-   ["-u" "--update" "<all,current,main> Update blog (regenerate HTML)."]
+   ["-u" "--update" "<all,articles,current,main> Update blog (regenerate HTML)."]
    ["-l" "--list" "<all,cat,current> List posts."]
    ["-h" "--help" "Print help."]
    ;; Category
