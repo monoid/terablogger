@@ -8,23 +8,18 @@
 (def categories
   (map (partial apply parse-cat)
        ;; Categories are in reversed order to check ordering in article-cats.
-       [["cat_2.db"
-         "Test cat 2
-2013-08-23T120000.txt"]
-        ["cat_1.db"
+       [["cat_1.db"
          "Test cat 1
 2013-08-23T120000.txt
-2013-08-30T120000.txt"]]))
+2013-08-30T120000.txt"]
+        ["cat_2.db"
+         "Test cat 2
+2013-08-23T120000.txt"]]))
 
 (deftest post-cats-test
   (testing "post-cats test"
-    (is (= (list (nth categories 1))
+    (is (= (list (first categories))
            (post-cats "2013-08-30T120000.txt" categories)))))
-
-(deftest post-cats-sort-test
-  (testing "post-cats ordering"
-    (is (= (reverse categories)
-           (post-cats "2013-08-23T120000.txt" categories)))))
 
 (deftest post-apath-test1
   (testing "Basic post-path."
@@ -139,13 +134,13 @@
 
 (deftest find-cat-by-id-test
   (testing "find-cat-by-id"
-    (is (= (first categories)
+    (is (= (second categories)
            (binding [*cats* categories]
                     (find-cat-by-id "2"))))))
 
 (deftest find-cat-by-id-num-test
   (testing "find-cat-by-id numeric"
-    (is (= (first categories)
+    (is (= (second categories)
            (binding [*cats* categories]
                     (find-cat-by-id 2))))))
 
@@ -165,7 +160,7 @@
 2013-08-28T120000.txt
 2013-08-30T120000.txt")
            (add-post-to-cat "2013-08-28T120000.txt"
-                            (second categories))))))
+                            (first categories))))))
 
 (deftest add-post-to-cat-existent
   (testing "add-post-to-cat add existent post"
@@ -174,7 +169,7 @@
 2013-08-23T120000.txt
 2013-08-30T120000.txt")
            (add-post-to-cat "2013-08-23T120000.txt"
-                            (second categories))))))
+                            (first categories))))))
 
 (deftest del-posts-from-cat-simple
   (testing "del-post-to-cat simple case"
@@ -182,7 +177,7 @@
                       "Test cat 1
 2013-08-30T120000.txt")
            (del-posts-from-cat #{"2013-08-23T120000.txt"}
-                               (second categories))))))
+                               (first categories))))))
 
 
 (deftest del-posts-from-cat-nonexist
@@ -192,7 +187,7 @@
 2013-08-23T120000.txt
 2013-08-30T120000.txt")
            (del-posts-from-cat #{"2013-08-28T120000.txt"}
-                               (second categories))))))
+                               (first categories))))))
 
 (deftest category-next-id--empty
   (testing "category-next-id when there are no categories"

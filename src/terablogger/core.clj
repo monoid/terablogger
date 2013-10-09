@@ -225,9 +225,8 @@ return []."
 (defn post-cats
   "Categories that article belongs to."
   [id cats]
-  (sort #(compare (:id %1) (:id %2))  ; Order by category numerical id.
-        (filter #((:set %) id)   ; Check if article id is in set of posts.
-                cats)))
+  (filter #((:set %) id)   ; Check if article id is in set of posts.
+          cats))
 
 (defrecord Post
     [TITLE
