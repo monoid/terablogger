@@ -305,6 +305,7 @@ return []."
     (zipmap plist posts)))
 
 (defmacro with-posts
+  "Bind *posts* to value of (get-post-map) and execute body."
   [& body]
   `(binding [*posts* (get-post-map)]
      ~@body))
@@ -327,7 +328,9 @@ return []."
   [posts]
   (group-by day-apath posts))
 
-(defn fmap [f m]
+(defn fmap
+  "Apply f to all values of a map m, leaving keys as is."
+  [f m]
   (into {} (for [[k v] m] [k (f v)])))
 
 
