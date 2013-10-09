@@ -222,6 +222,15 @@ return []."
       (format "%4d-%02d-%02dT%02d:%02d:%02d%s"
               year month day hours minutes seconds tzs))))
 
+
+(defn posts-cats
+  "Sequence of categories that post ids belongs to."
+  [post-ids]
+  (let [post-ids-set (set post-ids)]
+    (for [c *cats*
+          :when (seq (intersection post-ids-set (:set c)))]
+      c)))
+
 (defn post-cats
   "Categories that article belongs to."
   [id cats]
@@ -726,6 +735,41 @@ return []."
   (first (filter #(= (str cat-id) (:id %))
                  *cats*)))
 
+(defn regen-posts-with-deps
+  "Regenerate HTML for post IDs and associated archives and main page.
+If post-ids is nil, regenerate everything."
+  ([post-ids]
+     (regen-posts-with-deps post-ids false))
+  ([post-ids articles-p]
+     (let [plist (list-posts)
+           months (sorted-months plist)
+           posts-months (if (nil? post-ids)
+                          months
+                          (sorted-months-subset months post-ids))
+           cats (if (nil? post-ids)
+                  *cats*
+                  (posts-cats post-ids))
+           post-ids (if (nil? post-ids) plist post-ids)
+           articles (parse-articles)]
+       ;; Posts and their's parts
+       (dorun
+        (for [p post-ids]
+          (write-post (force (*posts* p)))))
+       ;; Categories
+       (write-cats cats)
+       ;; Months
+       (write-months posts-months)
+       ;; Feed
+       (write-feed [] plist)
+       ;; Archive
+       (write-archive-index plist *cats* months)
+       ;; Articles
+       (when articles-p
+         (write-articles articles))
+       ;; Main
+       (write-main-pages plist months articles))))
+
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Operations
@@ -793,33 +837,18 @@ return []."
                          cat))
                      *cats*)]
       (binding [*cats* cats*]
-        ;; Regenerate HTML
+        ;; Save data
         ;; 1. Post
         (write-post (extend-post *cats* post))
         ;; 2. Categories
+        (dorun
+           (for [cat *cats*
+                 :when (cat-ids (:id cat))]
+             (save-cat cat)))
+        ;; Regenerate HTML
         (with-posts
-          (dorun
-           (for [cat (filter (comp cat-ids :id) *cats*)]
-             (do
-               (save-cat cat)
-               ;; Regenerate category HTML
-               (write-cat cat))))
-          ;; 2. Month
-          (let [plist (list-posts)
-                ordered-months (sorted-months plist)
-                articles (parse-articles)]
-            (write-months ordered-months)
-            ;; 3. Archive and Main
-            (write-archive-index plist *cats* ordered-months)
-            ;; ;; Articles
-            ;; (write-articles articles)
-            ;; Feed
-            (write-feed [] plist)
-            ;; Main
-            (write-main-pages plist
-                              ordered-months articles)))
+          (regen-posts-with-deps [post-id]))
         *cats*))))
-
 
 (defn category-next-id
   [cats]
@@ -887,20 +916,11 @@ return []."
                 articles (list-articles)]
             (binding [*cats* (map (partial del-posts-from-cat post-nums)
                                   *cats*)]
-              (let [m (sorted-months plist)]
-                (dorun
-                 (for [c cat-ids-to-upd]
-                   (let [cat (find-cat-by-id c)]
-                     (save-cat cat)
-                     (write-cat cat))))
-                ;; Months
-                (write-months m)
-                ;; Archives
-                (write-archive-index plist *cats* m)
-                ;; Feed
-                (write-feed [] plist)
-                ;; Main
-                (write-main-pages plist m articles)))))))))
+              (dorun
+               (for [c cat-ids-to-upd]
+                 (let [cat (find-cat-by-id c)]
+                   (save-cat cat))))
+              (regen-posts-with-deps post-ids))))))))
 
 (defn delete-cats
   "Delete categories."
@@ -919,33 +939,7 @@ return []."
       (binding [*cats* (remove (partial contains? cats)
                                *cats*)]
         (with-posts
-          ;; Regenerate posts
-          (dorun
-           (for [pid posts]
-             (write-post (force (*posts* pid)))))
-          
-          ;; Regenerate categories that has common articles with removed.
-          ;; So far regenerate everything.
-          (dorun
-           (for [cat *cats*]
-             (write-cat cat)))
-          ;; Regenerate months of categories.
-
-          (let [plist (list-posts)
-                months-sorted (sorted-months plist)
-                articles (parse-articles)]
-            ;; Month archive
-            (write-months (sorted-months-subset months-sorted posts))
-            ;; Regenerate archive.
-            (write-archive-index plist *cats* months-sorted)
-            ;; ;; Articles
-            ;; (write-articles articles)
-
-            ;; Feed
-            (write-feed [] plist)
-            ;; Regenerate main.
-            (write-main-pages plist
-                              months-sorted articles))
+          (regen-posts-with-deps posts)
           *cats*)))))
 
 
@@ -959,27 +953,7 @@ return []."
     (exec-editor post-file)
     (with-cats
       (with-posts
-        (let [post (force (*posts* post-id))
-              months (sorted-months plist)
-              ;; This is a single month, actually
-              post-months (sorted-months-subset [post-id] months)
-              articles (parse-articles)]
-          ;; Regenerate post and cache
-          (write-post post)
-          ;; Regenerate categories
-          (dorun
-           (for [cat *cats*
-                 :when (contains? (:set cat) post-id)]
-             (write-cat cat)))
-          ;; Regenerate months
-          (write-months post-months)
-          ;; Regenerate feed
-          (write-feed [] plist)
-          ;; Regenerate archive.
-          (write-archive-index plist *cats* months)
-          ;; Regenerate main
-          (write-main-pages plist
-                            months articles))))))
+        (regen-posts-with-deps [post-id])))))
 
 (defn edit-cat
   "Edit category."
@@ -996,30 +970,7 @@ return []."
           (save-cat new-cat)
 
           (with-posts
-            (let [plist (list-posts)
-                  months (sorted-months plist)
-                  articles (parse-articles)]
-              ;; Update posts
-              (dorun
-               (for [p (:files new-cat)]
-                 (write-post (force (*posts* p)))))
-              ;; Update post's cats
-              (dorun
-               (for [c *cats*
-                     :when (-> (:set c)
-                               (intersection (:set new-cat))
-                               empty?
-                               not)]
-                 (write-cat c)))
-              ;; Update months
-              (write-months (sorted-months-subset (:files new-cat) months))
-              ;; Update feed
-              (write-feed [] plist)
-              ;; Regenerate archive.
-              (write-archive-index plist *cats* months)
-              ;; Update main
-              (write-main-pages plist
-                                months articles)))))
+            (regen-posts-with-deps (:files new-cat)))))
       (println "Category not found."))))
 
 
@@ -1046,28 +997,15 @@ Remove from old, add to new, regenerate everything."
                               :else %)
                             *cats*)]
         (with-posts
-          (let [post (force (*posts* post-id))
-                m (sorted-months plist)
-                articles (parse-articles)]
-            ;; Update post
-            (write-post post)
-            ;; Update cats
-            (dorun
-             (for [c *cats*
-                   :when (to-regen (:id c))]
-               (do
-                 (when (or (removed (:id c))
-                           (added (:id c)))
-                   (save-cat c))
-                 (write-cat c))))
-            ;; Update months
-            (write-months (sorted-months-subset [post-id] m))
-            ;; Feed
-            (write-feed [] plist)
-            ;; Regenerate archive.
-            (write-archive-index plist *cats* m)
-            ;; Main
-            (write-main-pages plist m articles)))))))
+          (dorun
+           (for [c *cats*
+                 :when (to-regen (:id c))]
+             (do
+               (when (or (removed (:id c))
+                         (added (:id c)))
+                 (save-cat c))
+               (write-cat c))))
+          (regen-posts-with-deps [post-id]))))))
 
 (defn command-add
   "Handle --add option."
@@ -1105,30 +1043,9 @@ Remove from old, add to new, regenerate everything."
       (with-posts
         (case (:update options)
           "all"
-          (do
-            ;; Update posts
-            (dorun
-             (for [p plist]
-               (write-post (force (*posts* p)))))
-            ;; Update cats
-            (dorun
-             (for [c *cats*]
-               (do
-                 (write-cat c))))
-            ;; Update months
-            (write-months months)
-            ;; Feed
-            (write-feed [] plist)
-            ;; Regenerate archive.
-            (write-archive-index plist *cats* months)
-            ;; Articles
-            (write-articles articles)
-            ;; Main
-            (write-main-pages plist months articles))
+          (regen-posts-with-deps nil true)
           "articles"
-          (do
-            (write-articles articles)
-            (write-main-pages plist months articles))
+          (regen-posts-with-deps [] true)
           "current"
           (throw (ex-info "Not-implemented."))
           "main"

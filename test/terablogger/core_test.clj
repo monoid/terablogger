@@ -21,6 +21,12 @@
     (is (= (list (first categories))
            (post-cats "2013-08-30T120000.txt" categories)))))
 
+(deftest posts-cats-test
+  (testing "posts-cats test"
+    (is (= (list (first categories))
+           (binding [*cats* categories]
+             (posts-cats ["2013-08-30T120000.txt"]))))))
+
 (deftest post-apath-test1
   (testing "Basic post-path."
     (is (= ["2006" "04" "07" "T12_04_59" "index.html"]
