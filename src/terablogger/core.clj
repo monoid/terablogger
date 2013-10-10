@@ -745,7 +745,7 @@ If post-ids is nil, regenerate everything."
            months (sorted-months plist)
            posts-months (if (nil? post-ids)
                           months
-                          (sorted-months-subset months post-ids))
+                          (sorted-months-subset post-ids months))
            cats (if (nil? post-ids)
                   *cats*
                   (posts-cats post-ids))
