@@ -1127,35 +1127,27 @@ Remove from old, add to new, regenerate everything."
   (try
     (let [[options ignored banner] (apply cli args CLI-OPTIONS)
           has-cat (contains? options :cat)
-          cmd-num (command-number options)
-          is-command-help (or (> cmd-num 1)
-                              (contains? options :help))
-          is-command-list (or (= cmd-num 0)
-                              (contains? options :list))
-          is-command-add  (:add options)
-          is-command-del  (contains? options :delete)
-          is-command-edit (contains? options :edit)
-          is-command-move (contains? options :move)
-          is-command-update (contains? options :update)]
+          cmd-num (command-number options)]
       (cfg/with-config (cfg/load-config options)
         (cond
          ;; Help is first because it executed when there are several options
          ;; are passed by mistake.
-         is-command-help
-         (println banner)
-         is-command-list
-         (command-list options)
-         is-command-add
-         (command-add options)
-         is-command-del
-         (command-del options)
-         is-command-edit
-         (command-edit options)
-         is-command-move
-         (command-move options)
-         is-command-update
-         (command-update options)
-         true
-         (println "Not implemented yet."))))
+         (or (> cmd-num 1)
+             (contains? options :help))
+           (println banner)
+         (or (= cmd-num 0)
+             (contains? options :list))
+           (command-list options)
+         (:add options)
+           (command-add options)
+         (contains? options :delete)
+           (command-del options)
+         (contains? options :edit)
+           (command-edit options)
+         (contains? options :move)
+           (command-move options)
+         (contains? options :update)
+           (command-update options)
+         :else (throw (ex-info "Not implemented yet." {})))))
     (catch clojure.lang.ExceptionInfo e
       (println "Error:" (.getMessage e)))))
