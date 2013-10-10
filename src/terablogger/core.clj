@@ -877,50 +877,53 @@ If post-ids is nil, regenerate everything."
 (defn delete-post
   "Delete post."
   [options]
-  (with-cats
-    (with-posts
-      (let [plist (list-posts)
-            post-nums (map #(Integer. %)
-                           (split* (:delete options) #","))
-            post-ids (set (remove nil?
-                                  (map (partial post-id-by-num plist)
-                                       post-nums)))
-            posts (map (comp force *posts*)
-                       post-ids)]
-        ;; Remove files
-        (dorun
-         (for [p posts]
-           (do
-             ;; Data
-             (-> (:ID p)
-                 apath/data-path
-                 (io/delete-file true))
-             ;; Cache
-             (-> (:ID p)
-                 post-apath
-                 apath/cache
-                 apath/blog-path
-                 (io/delete-file true)))))
+  (try
+    (with-cats
+      (with-posts
+        (let [plist (list-posts)
+              post-nums (map #(Integer. %)
+                             (split* (:delete options) #","))
+              post-ids (set (remove nil?
+                                    (map (partial post-id-by-num plist)
+                                         post-nums)))
+              posts (map (comp force *posts*)
+                         post-ids)]
+          ;; Remove files
+          (dorun
+           (for [p posts]
+             (do
+               ;; Data
+               (-> (:ID p)
+                   apath/data-path
+                   (io/delete-file true))
+               ;; Cache
+               (-> (:ID p)
+                   post-apath
+                   apath/cache
+                   apath/blog-path
+                   (io/delete-file true)))))
 
-        ;; Filter out from post db
-        (binding [*posts* (apply dissoc *posts* post-ids)]
-          ;; We collect only ids because category objects will be
-          ;; updated later.
-          (let [cat-ids-to-upd (map :id
-                                    (filter #(->> %
-                                                  :set
-                                                  (intersection post-ids)
-                                                  seq)
-                                            *cats*))
-                plist (list-posts)
-                articles (list-articles)]
-            (binding [*cats* (map (partial del-posts-from-cat post-nums)
-                                  *cats*)]
-              (dorun
-               (for [c cat-ids-to-upd]
-                 (let [cat (find-cat-by-id c)]
-                   (save-cat cat))))
-              (regen-posts-with-deps post-ids))))))))
+          ;; Filter out from post db
+          (binding [*posts* (apply dissoc *posts* post-ids)]
+            ;; We collect only ids because category objects will be
+            ;; updated later.
+            (let [cat-ids-to-upd (map :id
+                                      (filter #(->> %
+                                                    :set
+                                                    (intersection post-ids)
+                                                    seq)
+                                              *cats*))
+                  plist (list-posts)
+                  articles (list-articles)]
+              (binding [*cats* (map (partial del-posts-from-cat post-nums)
+                                    *cats*)]
+                (dorun
+                 (for [c cat-ids-to-upd]
+                   (let [cat (find-cat-by-id c)]
+                     (save-cat cat))))
+                (regen-posts-with-deps post-ids)))))))
+    (catch NumberFormatException e
+      (throw (ex-info "Illegal post number." {})))))
 
 (defn delete-cats
   "Delete categories."
@@ -946,14 +949,17 @@ If post-ids is nil, regenerate everything."
 (defn edit-post
   "Edit post."
   [options]
-  (let [plist (list-posts)
-        post-num (Integer. (:edit options))
-        post-id (post-id-by-num plist post-num)
-        post-file (apath/data-path post-id)]
-    (exec-editor post-file)
-    (with-cats
-      (with-posts
-        (regen-posts-with-deps [post-id])))))
+  (try
+    (let [plist (list-posts)
+          post-num (Integer. (:edit options))
+          post-id (post-id-by-num plist post-num)
+          post-file (apath/data-path post-id)]
+      (exec-editor post-file)
+      (with-cats
+        (with-posts
+          (regen-posts-with-deps [post-id]))))
+    (catch NumberFormatException e
+      (throw (ex-info "Illegal post number." {})))))
 
 (defn edit-cat
   "Edit category."
@@ -971,41 +977,44 @@ If post-ids is nil, regenerate everything."
 
           (with-posts
             (regen-posts-with-deps (:files new-cat)))))
-      (println "Category not found."))))
+      (throw (ex-info "Category not found." {})))))
 
 
 (defn move-post
   "Move post to categories.
 Remove from old, add to new, regenerate everything."
   [options]
-  (with-cats
-    (let [plist (list-posts)
-          post-num (Integer. (:move options))
-          post-id (post-id-by-num plist post-num)
-          old-cats (post-cats post-id *cats*)
-          old-cats* (set (map :id old-cats))
-          cats (options-cats options)
-          cats* (set (map :id cats))
-          removed (difference old-cats* cats*)
-          added (difference cats* old-cats*)
-          to-regen (union cats* old-cats*)]
-      (binding [*cats* (map #(cond
-                              (removed (:id %))
+  (try
+    (with-cats
+      (let [plist (list-posts)
+            post-num (Integer. (:move options))
+            post-id (post-id-by-num plist post-num)
+            old-cats (post-cats post-id *cats*)
+            old-cats* (set (map :id old-cats))
+            cats (options-cats options)
+            cats* (set (map :id cats))
+            removed (difference old-cats* cats*)
+            added (difference cats* old-cats*)
+            to-regen (union cats* old-cats*)]
+        (binding [*cats* (map #(cond
+                                (removed (:id %))
                                 (del-posts-from-cat [post-id] %)
-                              (added (:id %))
+                                (added (:id %))
                                 (add-post-to-cat post-id %)
-                              :else %)
-                            *cats*)]
-        (with-posts
-          (dorun
-           (for [c *cats*
-                 :when (to-regen (:id c))]
-             (do
-               (when (or (removed (:id c))
-                         (added (:id c)))
-                 (save-cat c))
-               (write-cat c))))
-          (regen-posts-with-deps [post-id]))))))
+                                :else %)
+                              *cats*)]
+          (with-posts
+            (dorun
+             (for [c *cats*
+                   :when (to-regen (:id c))]
+               (do
+                 (when (or (removed (:id c))
+                           (added (:id c)))
+                   (save-cat c))
+                 (write-cat c))))
+            (regen-posts-with-deps [post-id])))))
+    (catch NumberFormatException e
+      (throw (ex-info "Illegal post number." {})))))
 
 (defn command-add
   "Handle --add option."
@@ -1044,11 +1053,11 @@ Remove from old, add to new, regenerate everything."
         "articles"
         (regen-posts-with-deps [] true)
         "current"
-        (throw (ex-info "Not-implemented."))
+        (throw (ex-info "Not-implemented." {}))
         "main"
-        (throw (ex-info "Not-implemented."))
+        (throw (ex-info "Not-implemented." {}))
         ;; Otherwise
-        (println "Unknown --update value: " (:update options))))))
+        (throw (ex-info "Unknown --update value." {}))))))
 
 (defn command-list
   "Handle --list <all,cat,current> command line option."
@@ -1073,10 +1082,8 @@ Remove from old, add to new, regenerate everything."
       (dorun
        (for [c *cats*]
          (println (format "%s. %s (%d)" (:id c) (:name c) (:count c)))))
-
-      ;; Default:
-      ;; TODO: throw an exception?
-      nil)))
+      ;; Default
+      (throw (ex-info "Unknown --list value." {})))))
 
 
 (def ^:const CLI-OPTIONS
@@ -1117,35 +1124,38 @@ Remove from old, add to new, regenerate everything."
   ;; work around dangerous default behaviour in Clojure
   (alter-var-root #'*read-eval* (constantly false))
 
-  (let [[options ignored banner] (apply cli args CLI-OPTIONS)
-        has-cat (contains? options :cat)
-        cmd-num (command-number options)
-        is-command-help (or (> cmd-num 1)
-                            (contains? options :help))
-        is-command-list (or (= cmd-num 0)
-                            (contains? options :list))
-        is-command-add  (:add options)
-        is-command-del  (contains? options :delete)
-        is-command-edit (contains? options :edit)
-        is-command-move (contains? options :move)
-        is-command-update (contains? options :update)]
-    (cfg/with-config (cfg/load-config options)
-      (cond
-       ;; Help is first because it executed when there are several options
-       ;; are passed by mistake.
-       is-command-help
-          (println banner)
-       is-command-list
-          (command-list options)
-       is-command-add
-          (command-add options)
-       is-command-del
-          (command-del options)
-       is-command-edit
-          (command-edit options)
-       is-command-move
-          (command-move options)
-       is-command-update
-          (command-update options)
-       true
-          (println "Not implemented yet.")))))
+  (try
+    (let [[options ignored banner] (apply cli args CLI-OPTIONS)
+          has-cat (contains? options :cat)
+          cmd-num (command-number options)
+          is-command-help (or (> cmd-num 1)
+                              (contains? options :help))
+          is-command-list (or (= cmd-num 0)
+                              (contains? options :list))
+          is-command-add  (:add options)
+          is-command-del  (contains? options :delete)
+          is-command-edit (contains? options :edit)
+          is-command-move (contains? options :move)
+          is-command-update (contains? options :update)]
+      (cfg/with-config (cfg/load-config options)
+        (cond
+         ;; Help is first because it executed when there are several options
+         ;; are passed by mistake.
+         is-command-help
+         (println banner)
+         is-command-list
+         (command-list options)
+         is-command-add
+         (command-add options)
+         is-command-del
+         (command-del options)
+         is-command-edit
+         (command-edit options)
+         is-command-move
+         (command-move options)
+         is-command-update
+         (command-update options)
+         true
+         (println "Not implemented yet."))))
+    (catch clojure.lang.ExceptionInfo e
+      (println "Error:" (.getMessage e)))))
