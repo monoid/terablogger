@@ -1036,22 +1036,19 @@ Remove from old, add to new, regenerate everything."
 
 (defn command-update
   [options]
-  (let [plist (list-posts)
-        months (sorted-months plist)
-        articles (parse-articles)]
-    (with-cats
-      (with-posts
-        (case (:update options)
-          "all"
-          (regen-posts-with-deps nil true)
-          "articles"
-          (regen-posts-with-deps [] true)
-          "current"
-          (throw (ex-info "Not-implemented."))
-          "main"
-          (throw (ex-info "Not-implemented."))
-          ;; Otherwise
-          (println "Unknown --update value: " (:update options)))))))
+  (with-cats
+    (with-posts
+      (case (:update options)
+        "all"
+        (regen-posts-with-deps nil true)
+        "articles"
+        (regen-posts-with-deps [] true)
+        "current"
+        (throw (ex-info "Not-implemented."))
+        "main"
+        (throw (ex-info "Not-implemented."))
+        ;; Otherwise
+        (println "Unknown --update value: " (:update options))))))
 
 (defn command-list
   "Handle --list <all,cat,current> command line option."
