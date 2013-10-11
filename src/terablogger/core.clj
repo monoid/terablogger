@@ -513,10 +513,10 @@ return []."
 
 (defn ls-posts
   [posts]
-  (doseq [[p n] (map list posts (range))]
+  (doseq [[p n] (map list posts (rest (range)))]
     (let [pcats (:categories p)]
       (print (format "%d. %s"
-                     (inc n)
+                     n
                      (truncatechars (:TITLE p) 32)))
       (when (seq pcats)
         (print (format " - [%s]" (string/join ", " (map :name pcats)))))
