@@ -172,9 +172,8 @@ return []."
 
 (defn write-articles
   [articles]
-  (dorun
-   (for [art articles]
-     (write-article art))))
+  (doseq [art articles]
+    (write-article art)))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -473,18 +472,16 @@ return []."
 
 (defn write-months
   [months]
-  (dorun
-   (for [month months]
-     (write-month month))))
+  (doseq [month months]
+    (write-month month)))
 
 (defn save-post
   "Write post data."
   [post]
   (with-open [wrtr (io/writer (apath/data-path (:ID post)))]
     ;; Header
-    (dorun
-     (for [field '(:TITLE :AUTHOR :DATE :DESC)]
-       (.write wrtr (format "%s: %s\n" (name field) (field post)))))
+    (doseq [field '(:TITLE :AUTHOR :DATE :DESC)]
+      (.write wrtr (format "%s: %s\n" (name field) (field post))))
     ;; Body
     (doto wrtr
       (.write "-----\nBODY:\n")
@@ -516,31 +513,29 @@ return []."
 
 (defn ls-posts
   [posts]
-  (dorun
-   (for [[p n] (map list posts (range))]
-     (let [pcats (:categories p)]
-       (print (format "%d. %s"
-                      (inc n)
-                      (truncatechars (:TITLE p) 32)))
-       (when (seq pcats)
-         (print (format " - [%s]" (string/join ", " (map :name pcats)))))
-       (println (format " - %s" (:DATE p)))))))
+  (doseq [[p n] (map list posts (range))]
+    (let [pcats (:categories p)]
+      (print (format "%d. %s"
+                     (inc n)
+                     (truncatechars (:TITLE p) 32)))
+      (when (seq pcats)
+        (print (format " - [%s]" (string/join ", " (map :name pcats)))))
+      (println (format " - %s" (:DATE p))))))
 
 
 (defn write-pages
   [template posts apath params]
   (let [url (apath/full-url-path apath)]
-    (dorun
-     (for [[pposts ptab pfname] (paginate posts url)
-           ;; File path
-           :let [papath (conj apath pfname)]]
-       (render* (assoc params
-                  :cfg cfg/*cfg*
-                  :body (string/join "" (map get-cached-post-part pposts))
-                  :tab ptab
-                  :feed (apath/full-url-path (feed-apath apath)))
-                template
-                papath)))))
+    (doseq [[pposts ptab pfname] (paginate posts url)
+            ;; File path
+            :let [papath (conj apath pfname)]]
+      (render* (assoc params
+                 :cfg cfg/*cfg*
+                 :body (string/join "" (map get-cached-post-part pposts))
+                 :tab ptab
+                 :feed (apath/full-url-path (feed-apath apath)))
+               template
+               papath))))
 
 (defn main-categories-html
   [cats]
@@ -684,11 +679,10 @@ return []."
     (.write wrtr (:name cat))
     (.write wrtr "\n")
     ;; Rest of file is list of posts
-    (dorun
-     (for [fid (:files cat)]
-       (doto wrtr
-         (.write fid)
-         (.write "\n"))))))
+    (doseq [fid (:files cat)]
+      (doto wrtr
+        (.write fid)
+        (.write "\n")))))
 
 (defn write-cat
   [cat]
@@ -709,9 +703,8 @@ return []."
 
 (defn write-cats
   [cats]
-  (dorun
-   (for [cat cats]
-     (write-cat cat))))
+  (doseq [cat cats]
+    (write-cat cat)))
 
 (defn add-post-to-cat
   [post-id cat]
@@ -752,9 +745,8 @@ If post-ids is nil, regenerate everything."
            post-ids (if (nil? post-ids) plist post-ids)
            articles (parse-articles)]
        ;; Posts and their's parts
-       (dorun
-        (for [p post-ids]
-          (write-post (force (*posts* p)))))
+       (doseq [p post-ids]
+         (write-post (force (*posts* p))))
        ;; Categories
        (write-cats cats)
        ;; Months
@@ -841,10 +833,9 @@ If post-ids is nil, regenerate everything."
         ;; 1. Post
         (write-post (extend-post *cats* post))
         ;; 2. Categories
-        (dorun
-           (for [cat *cats*
-                 :when (cat-ids (:id cat))]
-             (save-cat cat)))
+        (doseq [cat *cats*
+                :when (cat-ids (:id cat))]
+          (save-cat cat))
         ;; Regenerate HTML
         (with-posts
           (regen-posts-with-deps [post-id]))
@@ -889,19 +880,18 @@ If post-ids is nil, regenerate everything."
               posts (map (comp force *posts*)
                          post-ids)]
           ;; Remove files
-          (dorun
-           (for [p posts]
-             (do
-               ;; Data
-               (-> (:ID p)
-                   apath/data-path
-                   (io/delete-file true))
-               ;; Cache
-               (-> (:ID p)
-                   post-apath
-                   apath/cache
-                   apath/blog-path
-                   (io/delete-file true)))))
+          (doseq [p posts]
+            (do
+              ;; Data
+              (-> (:ID p)
+                  apath/data-path
+                  (io/delete-file true))
+              ;; Cache
+              (-> (:ID p)
+                  post-apath
+                  apath/cache
+                  apath/blog-path
+                  (io/delete-file true))))
 
           ;; Filter out from post db
           (binding [*posts* (apply dissoc *posts* post-ids)]
@@ -917,10 +907,9 @@ If post-ids is nil, regenerate everything."
                   articles (list-articles)]
               (binding [*cats* (map (partial del-posts-from-cat post-nums)
                                     *cats*)]
-                (dorun
-                 (for [c cat-ids-to-upd]
-                   (let [cat (find-cat-by-id c)]
-                     (save-cat cat))))
+                (doseq [c cat-ids-to-upd]
+                  (let [cat (find-cat-by-id c)]
+                    (save-cat cat)))
                 (regen-posts-with-deps post-ids)))))))
     (catch NumberFormatException e
       (throw (ex-info "Illegal post number." {})))))
@@ -933,11 +922,10 @@ If post-ids is nil, regenerate everything."
           cats (set (map find-cat-by-id cat-ids))
           posts (reduce union {} (map :set cats))]
       ;; Remove db files
-      (dorun
-       (for [cat cats]
-         (-> (:file cat)
-             apath/data-path
-             (io/delete-file true))))
+      (doseq [cat cats]
+        (-> (:file cat)
+            apath/data-path
+            (io/delete-file true)))
       ;; Regenerate HTML
       (binding [*cats* (remove (partial contains? cats)
                                *cats*)]
@@ -1004,14 +992,13 @@ Remove from old, add to new, regenerate everything."
                                 :else %)
                               *cats*)]
           (with-posts
-            (dorun
-             (for [c *cats*
-                   :when (to-regen (:id c))]
-               (do
-                 (when (or (removed (:id c))
-                           (added (:id c)))
-                   (save-cat c))
-                 (write-cat c))))
+            (doseq [c *cats*
+                    :when (to-regen (:id c))]
+              (do
+                (when (or (removed (:id c))
+                          (added (:id c)))
+                  (save-cat c))
+                (write-cat c)))
             (regen-posts-with-deps [post-id])))))
     (catch NumberFormatException e
       (throw (ex-info "Illegal post number." {})))))
@@ -1079,9 +1066,8 @@ Remove from old, add to new, regenerate everything."
 
       "cat"
       ;; List categories
-      (dorun
-       (for [c *cats*]
-         (println (format "%s. %s (%d)" (:id c) (:name c) (:count c)))))
+      (doseq [c *cats*]
+        (println (format "%s. %s (%d)" (:id c) (:name c) (:count c))))
       ;; Default
       (throw (ex-info "Unknown --list value." {})))))
 
