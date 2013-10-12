@@ -112,6 +112,12 @@ return []."
          default
          resp))))
 
+(defn println*
+  "println to stream out."
+  [out & more]
+  (binding [*out* out]
+     (apply println more)))
+
 (defn href [apath text]
   (format "<a href=\"%s\">%s</a>"
           (html-escape (apath/full-url-path apath))
@@ -1120,7 +1126,7 @@ Remove from old, add to new, regenerate everything."
          ;; are passed by mistake.
          (or (> cmd-num 1)
              (contains? options :help))
-           (println banner)
+           (println* *err* banner)
          (or (= cmd-num 0)
              (contains? options :list))
            (command-list options)
@@ -1136,4 +1142,4 @@ Remove from old, add to new, regenerate everything."
            (command-update options)
          :else (throw (ex-info "Not implemented yet." {})))))
     (catch clojure.lang.ExceptionInfo e
-      (println "Error:" (.getMessage e)))))
+      (println* *err* "Error:" (.getMessage e)))))
