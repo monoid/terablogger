@@ -323,6 +323,11 @@ return []."
   `(binding [*posts* (get-post-map)]
      ~@body))
 
+(defn post-by-id
+  "Find entry by id."
+  [id]
+  (force (*posts* id)))
+
 
 (defn month-apath
   "Post's month path from id."
@@ -357,7 +362,7 @@ return []."
                      apath/cache
                      apath/blog-path)]
     (when-not (.exists (io/file filename))
-      (write-post (force (*posts* post-id))))
+      (write-post (post-by-id post-id)))
     (slurp filename)))
 
 (defn month-text
@@ -606,9 +611,9 @@ return []."
   [apath post-ids]
   (let [apath (feed-apath apath)
         feed-url (apath/full-url-path apath)
-        posts (map (comp force *posts*) post-ids)]
+        posts (map post-by-id post-ids)]
     (render* {:cfg cfg/*cfg*
-              :entries (map force (take (:page-size cfg/*cfg*) posts))
+              :entries (take (:page-size cfg/*cfg*) posts)
               :lastmodified (post-ts (:ID (first posts)))
               :self-url feed-url}
              "atom"
@@ -618,7 +623,7 @@ return []."
 (defn archive-index
   [plist months]
   (render "all-posts"
-          {:posts (map (comp force *posts*) plist)
+          {:posts (map post-by-id plist)
            :cats *cats*
            :months (map (comp (partial hash-map :month) month-link first)
                         months)
@@ -752,7 +757,7 @@ If post-ids is nil, regenerate everything."
            articles (parse-articles)]
        ;; Posts and their's parts
        (doseq [p post-ids]
-         (write-post (force (*posts* p))))
+         (write-post (post-by-id p)))
        ;; Categories
        (write-cats cats)
        ;; Months
@@ -883,8 +888,7 @@ If post-ids is nil, regenerate everything."
               post-ids (set (remove nil?
                                     (map (partial post-id-by-num plist)
                                          post-nums)))
-              posts (map (comp force *posts*)
-                         post-ids)]
+              posts (map post-by-id post-ids)]
           ;; Remove files
           (doseq [p posts]
             (do
