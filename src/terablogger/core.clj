@@ -238,9 +238,9 @@ return []."
 
 (defn post-cats
   "Categories that article belongs to."
-  [id cats]
+  [id]
   (filter #((:set %) id)   ; Check if article id is in set of posts.
-          cats))
+          *cats*))
 
 (defrecord Post
     [TITLE
@@ -269,9 +269,9 @@ return []."
 
 (defn extend-post
   "Convert Post to Entry, adding derived field values used in templates."
-  [cats post]
+  [post]
   (let [id (:ID post)
-        categories (post-cats id cats)
+        categories (post-cats id)
         month (month-apath id)]
     (map->Entry
      (assoc post
@@ -292,7 +292,7 @@ return []."
 
 (defn parse-post
   "Parse blog post."
-  [cats id]
+  [id]
   (let [txt (slurp (apath/data-path id))
         lines (string/split-lines txt)
         [headers body] (split-with #(not (re-seq #"^-----$" %)) lines)]
@@ -303,7 +303,7 @@ return []."
                   (file-format id)
                   cfg/*cfg*))
      map->Post
-     (extend-post cats))))
+     extend-post)))
 
 (defn post-id-by-num
   "Convert post ID (1-based) from command line to real ID (timestamp)."
@@ -314,7 +314,7 @@ return []."
   "Map of post ID to delay with Entry for *posts* dynamic."
   []
   (let [plist (list-posts)
-        posts (map #(delay (parse-post *cats* %)) plist)]
+        posts (map #(delay (parse-post %)) plist)]
     (zipmap plist posts)))
 
 (defmacro with-posts
@@ -544,8 +544,8 @@ return []."
                papath))))
 
 (defn main-categories-html
-  [cats]
-  (->> cats
+  []
+  (->> *cats*
        (map #(format "%s&nbsp;%d"
                      (href (:apath %) (:name %))
                      (count (:files %))))
@@ -581,11 +581,11 @@ return []."
                  posts
                  []
                  {:feed (apath/full-url-path (feed-apath []))
-                  :categories (main-categories-html *cats*)
+                  :categories (main-categories-html)
                   :archive-index (apath/full-url-path (apath/archive ["index.html"]))
                   :month-links (main-month-links months)
                   :count (count posts)
-                  :last (:DATE (parse-post *cats* (first posts)))
+                  :last (:DATE (parse-post (first posts)))
                   :contacts (format (:contacts cfg/*cfg*)
                                     (:author cfg/*cfg*))
                   :calendar cal
@@ -616,17 +616,17 @@ return []."
     feed-url))
 
 (defn archive-index
-  [plist cats months]
+  [plist months]
   (render "all-posts"
           {:posts (map (comp force *posts*) plist)
-           :cats cats
+           :cats *cats*
            :months (map (comp (partial hash-map :month) month-link first)
                         months)
            :cfg cfg/*cfg*}))
 
 (defn write-archive-index
-  [plist cats months]
-  (render* {:body (archive-index plist cats months)
+  [plist months]
+  (render* {:body (archive-index plist months)
             :feed (apath/full-url-path (feed-apath []))
             :title? false
             :cfg cfg/*cfg*}
@@ -760,7 +760,7 @@ If post-ids is nil, regenerate everything."
        ;; Feed
        (write-feed [] plist)
        ;; Archive
-       (write-archive-index plist *cats* months)
+       (write-archive-index plist months)
        ;; Articles
        (when articles-p
          (write-articles articles))
@@ -837,7 +837,7 @@ If post-ids is nil, regenerate everything."
       (binding [*cats* cats*]
         ;; Save data
         ;; 1. Post
-        (write-post (extend-post *cats* post))
+        (write-post (extend-post post))
         ;; 2. Categories
         (doseq [cat *cats*
                 :when (cat-ids (:id cat))]
@@ -848,11 +848,11 @@ If post-ids is nil, regenerate everything."
         *cats*))))
 
 (defn category-next-id
-  [cats]
+  []
   (str
    (inc (reduce max 0
                 (map #(Integer/parseInt (:id %))
-                     cats)))))
+                     *cats*)))))
 
 (defn add-cat
   "Add category."
@@ -860,7 +860,7 @@ If post-ids is nil, regenerate everything."
   (let [title (or
                (:title options)
                (ask-user "Category title"))
-        new-id (category-next-id *cats*)
+        new-id (category-next-id)
         file (str "cat_" new-id)]
     (save-cat
      (map->Category {:id new-id
@@ -1060,14 +1060,12 @@ Remove from old, add to new, regenerate everything."
       ;; We also accept "last" and "new".  Undocumented feature :)
       ("current" "last" "new" nil)
       (let [plist (list-posts)
-            posts (map (partial parse-post *cats*)
-                       plist)]
+            posts (map parse-post plist)]
         (ls-posts (take (:page-size cfg/*cfg*) posts)))
 
       "all"
       (let [plist (list-posts)
-            posts (map (partial parse-post *cats*)
-                       plist)]
+            posts (map parse-post plist)]
         (ls-posts posts))
 
       "cat"

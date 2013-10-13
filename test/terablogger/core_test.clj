@@ -19,7 +19,8 @@
 (deftest post-cats-test
   (testing "post-cats test"
     (is (= (list (first categories))
-           (post-cats "2013-08-30T120000.txt" categories)))))
+           (binding [*cats* categories]
+             (post-cats "2013-08-30T120000.txt"))))))
 
 (deftest posts-cats-test
   (testing "posts-cats test"
@@ -197,11 +198,13 @@
 
 (deftest category-next-id--empty
   (testing "category-next-id when there are no categories"
-    (is (= "1" (category-next-id [])))))
+    (is (= "1" (binding [*cats* []] (category-next-id))))))
 
 (deftest category-next-id--standard
   (testing "category-next-id when there are number of categories"
-    (is (= "3" (category-next-id categories)))))
+    (is (= "3"
+           (binding [*cats* categories]
+             (category-next-id))))))
 
 (deftest command-number--empty
   (testing "command-number when no option provided"
