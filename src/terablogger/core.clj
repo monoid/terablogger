@@ -196,13 +196,14 @@ return []."
              headers)))
 
 (defn post-apath
-  ([id]
-     (conj (subvec (re-matches #"^(\d+)-(\d+)-(\d+)(T[0-9_]+).*" id)
-                   1)
-           "index.html")))
+  [id]
+  (conj (subvec (re-matches #"^(\d+)-(\d+)-(\d+)(T[0-9_]+).*" id)
+                1)
+        "index.html"))
 
-(defn post-htmlid [id]
+(defn post-htmlid
   "Id that is used for HTML article id."
+  [id]
   (str "e" id))
 
 (defn post-ts
@@ -342,7 +343,7 @@ return []."
           1))
 
 (defn days
-  "Group post by day."
+  "Group posts by day."
   [posts]
   (group-by day-apath posts))
 
