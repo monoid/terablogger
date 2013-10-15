@@ -1051,9 +1051,10 @@ Remove from old, add to new, regenerate everything."
         "articles"
         (regen-posts-with-deps [] true)
         "current"
-        (throw (ex-info "Not-implemented." {}))
+        (regen-posts-with-deps (take 1 (list-posts)))
         "main"
-        (throw (ex-info "Not-implemented." {}))
+        (regen-posts-with-deps (take (:page-size cfg/*cfg*)
+                                     (list-posts)))
         ;; Otherwise
         (throw (ex-info "Unknown --update value." {}))))))
 
