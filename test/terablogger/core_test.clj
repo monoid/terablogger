@@ -106,17 +106,6 @@
     (is (= "pred"
            (article-id "pred.txt")))))
 
-(deftest sort*-default-test
-  (testing "sort* with default comparator"
-    (is (= [5 3 2 2 1]
-           (sort* [1 2 5 3 2])))))
-
-(deftest sort*-test
-  (testing "sort* with comparator"
-    (is (= [{:id 5} {:id 3} {:id 2} {:id 2} {:id 1}]
-           (sort* #(compare (:id %1) (:id %2))
-                  [{:id 1} {:id 2} {:id 5} {:id 3} {:id 2}])))))
-
 (deftest href-test
   (testing "href"
     (is (= "<a href=\"http://example-blog.com/blog/test?a=b&amp;u=v\">A&gt;B&gt;C</a>"

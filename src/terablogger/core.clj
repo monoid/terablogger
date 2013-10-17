@@ -8,6 +8,7 @@
             [terablogger.format-markdown]
             [terablogger.format-textile]
             [terablogger.templates :refer [render render* tmpl]]
+            [terablogger.utils :as u]
             [terablogger.format-html :refer [html-escape]])
   (:import java.io.File
            java.util.Calendar
@@ -73,50 +74,6 @@
     (map list pages
          (map #(paginated-bar % npages url-prefix) numbers)
          (map paginated-filename numbers))))
-
-(defn truncatechars
-  "If msg's length exeeds n, truncate it, appending '...'. "
-  [msg n]
-  (if (> (count msg) n)
-    (-> msg
-        (subs 0 (- n 3))
-        (string/trimr)  ; Trim whitespaces at end for better appearance
-        (str "..."))
-    msg))
-
-(defn sort*
-  "Sort in reverse order."
-  ([seq]
-     (sort #(compare %2 %1) seq))
-  ([cmp seq]
-     (sort #(cmp %2 %1) seq)))
-
-(defn split*
-  "Split string with regexp.  If first argument is nil or empty string,
-return []."
-  [str-or-nil regex]
-  (if (seq str-or-nil)
-    (string/split str-or-nil regex)
-    []))
-
-(defn ask-user
-  ([prompt]
-     (print (format "%s: " prompt))
-     (flush)
-     (read-line))
-  ([prompt default]
-     (print (format "%s [%s]: " prompt default))
-     (flush)
-     (let [resp (read-line)]
-       (if (string/blank? resp)
-         default
-         resp))))
-
-(defn println*
-  "println to stream out."
-  [out & more]
-  (binding [*out* out]
-     (apply println more)))
 
 (defn href [apath text]
   (format "<a href=\"%s\">%s</a>"
@@ -347,11 +304,6 @@ return []."
   [posts]
   (group-by day-apath posts))
 
-(defn fmap
-  "Apply f to all values of a map m, leaving keys as is."
-  [f m]
-  (into {} (for [[k v] m] [k (f v)])))
-
 
 (declare write-post)
 
@@ -421,7 +373,7 @@ return []."
 (defn month-cal [month posts]
   (let [[year mon] month
         ;; Grouped and sorted within each group
-        posts-grouped (fmap sort* (days posts))
+        posts-grouped (u/fmap u/sort* (days posts))
         cal (Calendar/getInstance)  ; TODO: we cannot work with arabic
                                         ; or chinese
         sym (java.text.DateFormatSymbols/getInstance)]
@@ -471,7 +423,7 @@ return []."
 (defn write-month
   [[month-id info]]
   (let [posts (:posts info)
-        sorted-posts (sort* posts)
+        sorted-posts (u/sort* posts)
         apath (apath/archive (conj month-id "index.html"))]
     (render* {:body (string/join "" (map get-cached-post-part sorted-posts))
               :cfg cfg/*cfg*
@@ -529,7 +481,7 @@ return []."
     (let [pcats (:categories p)]
       (print (format "%d. %s"
                      n
-                     (truncatechars (:TITLE p) 32)))
+                     (u/truncatechars (:TITLE p) 32)))
       (when (seq pcats)
         (print (format " - [%s]" (string/join ", " (map :name pcats)))))
       (println (format " - %s" (:DATE p))))))
@@ -701,7 +653,7 @@ return []."
   (let [{id :id
          name :name
          posts :files} cat
-         posts (sort* posts)
+         posts (u/sort* posts)
          cat-apath (apath/archive [(format "cat_%s" id)])]
     (write-pages "category-archive"
                  posts
@@ -782,23 +734,14 @@ If post-ids is nil, regenerate everything."
 (defn options-cats
   "Resolve comma-separated list of category IDs into seq of Category objects."
   [options]
-  (map find-cat-by-id (split* (:cat options) #",")))
-
-(defn exec-editor [path]
-  (-> (Runtime/getRuntime)
-      (.exec (->> path
-                  io/as-file
-                  .getPath
-                  (conj (:editor cfg/*cfg*))
-                  into-array))
-      (.waitFor)))
+  (map find-cat-by-id (u/split* (:cat options) #",")))
 
 (defn read-post-body
   []
   (let [tmpfile (File/createTempFile "post-" ".txt")]
     (try
       ;; Open text editor with new file
-      (exec-editor tmpfile)
+      (u/exec-editor tmpfile)
       ;; Read body
       (slurp tmpfile)
 
@@ -811,12 +754,12 @@ If post-ids is nil, regenerate everything."
   (let [ts (java.util.Date.)
         title (or
                (:title options)
-               (ask-user "Title"))
+               (u/ask-user "Title"))
         desc (or
               (:desc options)
-              (ask-user "Description"))
+              (u/ask-user "Description"))
         author (or (:author options)
-                   (ask-user "Author" (:author cfg/*cfg*)))
+                   (u/ask-user "Author" (:author cfg/*cfg*)))
         post-id (.format (SimpleDateFormat. "yyyy-MM-dd'T'HH_mm_ss'.txt'") ts)
         date    (.format (DateFormat/getDateTimeInstance
                           DateFormat/LONG
@@ -865,7 +808,7 @@ If post-ids is nil, regenerate everything."
   [options]
   (let [title (or
                (:title options)
-               (ask-user "Category title"))
+               (u/ask-user "Category title"))
         new-id (category-next-id)
         file (str "cat_" new-id)]
     (save-cat
@@ -885,7 +828,7 @@ If post-ids is nil, regenerate everything."
       (with-posts
         (let [plist (list-posts)
               post-nums (map #(Integer. %)
-                             (split* (:delete options) #","))
+                             (u/split* (:delete options) #","))
               post-ids (set (remove nil?
                                     (map (partial post-id-by-num plist)
                                          post-nums)))
@@ -929,7 +872,7 @@ If post-ids is nil, regenerate everything."
   "Delete categories."
   [options]
   (with-cats
-    (let [cat-ids (split* (:cat options) #",")
+    (let [cat-ids (u/split* (:cat options) #",")
           cats (set (map find-cat-by-id cat-ids))
           posts (reduce union {} (map :set cats))]
       ;; Remove db files
@@ -953,7 +896,7 @@ If post-ids is nil, regenerate everything."
           post-num (Integer. (:edit options))
           post-id (post-id-by-num plist post-num)
           post-file (apath/data-path post-id)]
-      (exec-editor post-file)
+      (u/exec-editor post-file)
       (with-cats
         (with-posts
           (regen-posts-with-deps [post-id]))))
@@ -966,7 +909,7 @@ If post-ids is nil, regenerate everything."
   (with-cats
     (if-let [cat (find-cat-by-id (:cat options))]
       (let [new-title (or (:title options)
-                          (ask-user "Category title"))
+                          (u/ask-user "Category title"))
             new-cat (assoc cat :name new-title)]
         (binding [*cats* (map #(if (= (:id %) (:id cat))
                                  new-cat
@@ -1130,7 +1073,7 @@ Remove from old, add to new, regenerate everything."
          ;; are passed by mistake.
          (or (> cmd-num 1)
              (contains? options :help))
-           (println* *err* banner)
+           (u/println* *err* banner)
          (or (= cmd-num 0)
              (contains? options :list))
            (command-list options)
@@ -1146,4 +1089,4 @@ Remove from old, add to new, regenerate everything."
            (command-update options)
          :else (throw (ex-info "Not implemented yet." {})))))
     (catch clojure.lang.ExceptionInfo e
-      (println* *err* "Error:" (.getMessage e)))))
+      (u/println* *err* "Error:" (.getMessage e)))))
