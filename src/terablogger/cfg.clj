@@ -1,5 +1,6 @@
 (ns terablogger.cfg
-  (:require clojure.edn))
+  (:require [clojure.edn]
+            [clojure.java.io :as io]))
 
 (def PAGE-SIZE
   "Default page size"
@@ -8,7 +9,7 @@
 (defn default-config []
   "Return default config."
   {:blog-dir (or (System/getenv "BLOG_DIR")
-                 "./blog")
+                 "./")
    :editor [(or (System/getenv "EDITOR")
                  "emacs")]
    :page-size PAGE-SIZE
@@ -53,9 +54,22 @@
      (binding [*blog-dir* (:blog-dir *cfg*)]
        ~@body)))
 
+(defn find-config
+  []
+  (let [files (filter #(and % (.exists (io/file %)))
+                    (map (fn [d]
+                           (if d
+                             (str d "/terablogger.conf")
+                             nil))
+                         [(System/getenv "BLOG_DIR") 
+                          "." ;; Current folder
+                          ]))]
+    (if (seq files)
+      (first files)
+      (throw (ex-info "Error: terabloger.conf not found." {})))))
+
 (defn load-config
   [params]
-  ;; STUB implementation
-  ;; TODO: check params
-  (into *cfg* (or (clojure.edn/read-string (slurp "terablogger.conf"))
-                  {})))
+  (into *cfg*
+        (or (clojure.edn/read-string (slurp (find-config)))
+            {})))
