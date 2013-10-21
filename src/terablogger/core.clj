@@ -12,6 +12,7 @@
             [terablogger.format-html :refer [html-escape]])
   (:import java.io.File
            java.util.Calendar
+	   java.util.GregorianCalendar
            java.text.DateFormat
            java.text.DateFormatSymbols
            java.text.SimpleDateFormat)
@@ -374,8 +375,7 @@
   (let [[year mon] month
         ;; Grouped and sorted within each group
         posts-grouped (u/fmap u/sort* (days posts))
-        cal (Calendar/getInstance)  ; TODO: we cannot work with arabic
-                                        ; or chinese
+        cal (GregorianCalendar.)
         sym (java.text.DateFormatSymbols/getInstance)]
 
     ;; Setup cal
